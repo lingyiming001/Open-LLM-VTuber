@@ -1,0 +1,81 @@
+:root, :root[data-vt-theme="dark"] { --vt-surface:#18181b; --vt-raised:#25252a; --vt-text:#f0f0f3; --vt-muted:#a1a1ad; --vt-border:#393940; --vt-accent:#6366f1; }
+:root[data-vt-theme="light"] { --vt-surface:#fafafa; --vt-raised:#eeeeF2; --vt-text:#25252d; --vt-muted:#646473; --vt-border:#d4d4de; }
+html[data-vt-theme] .vt-sidebar, html[data-vt-theme] .chakra-drawer__content, html[data-vt-theme] .chakra-menu__content, html[data-vt-theme] .chakra-select__content, html[data-vt-theme] .chakra-popover__content { background:var(--vt-surface)!important; color:var(--vt-text)!important; border-color:var(--vt-border)!important; }
+html[data-vt-theme] .chakra-drawer__header, html[data-vt-theme] .chakra-drawer__footer { border-color:var(--vt-border)!important; }
+html[data-vt-theme] .chakra-drawer__title, html[data-vt-theme] .chakra-drawer__content .chakra-field__label { color:var(--vt-text)!important; }
+html[data-vt-theme] .chakra-drawer__content input:not([type=checkbox]):not([type=radio]), html[data-vt-theme] .chakra-drawer__content select, html[data-vt-theme] .chakra-drawer__content textarea, html[data-vt-theme] .chakra-drawer__content .chakra-select__trigger { background:var(--vt-raised)!important; color:var(--vt-text)!important; border-color:var(--vt-border)!important; }
+html[data-vt-theme] .chakra-drawer__content input::placeholder { color:var(--vt-muted)!important; }
+html[data-vt-theme] .chakra-drawer__content [role=tab] { color:var(--vt-muted)!important; }
+html[data-vt-theme] .chakra-drawer__content [role=tab][aria-selected=true] { color:var(--vt-accent)!important; border-bottom-color:var(--vt-accent)!important; }
+html[data-vt-theme] .chakra-drawer__content [role=tablist] { border-color:var(--vt-border)!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-switch__control[data-state=checked], html[data-vt-theme] .chakra-drawer__footer button:last-child { background:var(--vt-accent)!important; color:white!important; }
+html[data-vt-theme] .chakra-drawer__footer button:first-child { color:var(--vt-text)!important; border-color:var(--vt-border)!important; }
+html[data-vt-theme] .vt-feature-drawer .chakra-drawer__header { display:block!important; position:relative; padding-right:60px!important; }
+html[data-vt-theme] .vt-feature-drawer .chakra-drawer__closeTrigger { width:32px!important; min-width:32px!important; max-width:32px!important; color:var(--vt-text)!important; }
+html[data-vt-theme] .vt-sidebar button:not(.chakra-drawer__content button) { color:var(--vt-text); }
+html[data-vt-theme="light"] .vt-sidebar [role=tabpanel], html[data-vt-theme="light"] .vt-sidebar [role=tablist] { color:var(--vt-text)!important; background:var(--vt-surface)!important; }
+html[data-vt-theme="light"] .vt-sidebar [role=tab][aria-selected=true] { background:var(--vt-raised)!important; }
+.vt-music input[type=range] { accent-color:var(--vt-accent); cursor:pointer; }
+.vt-music button:hover { filter:brightness(1.12); }
+
+html[data-vt-theme="light"] .vt-sidebar .cs-message__content, html[data-vt-theme="light"] .vt-sidebar .cs-message__sender-name, html[data-vt-theme="light"] .vt-sidebar .cs-message-list { color:var(--vt-text)!important; }
+/* Explicit component colors: legacy controls used fixed white text and black fills. */
+html[data-vt-theme] .vt-toolbar button { background:transparent!important; color:var(--vt-text)!important; border:0!important; box-shadow:none!important; border-radius:8px!important; }
+html[data-vt-theme] .vt-toolbar button:hover { background:var(--vt-raised)!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-text,
+html[data-vt-theme] .chakra-drawer__content .chakra-field__label,
+html[data-vt-theme] .chakra-drawer__content .chakra-field__label p,
+html[data-vt-theme] .chakra-drawer__content label,
+html[data-vt-theme] .chakra-drawer__content .chakra-number-input__control,
+html[data-vt-theme] .chakra-drawer__content .chakra-drawer__closeTrigger { color:var(--vt-text)!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-number-input__control { border-color:var(--vt-border)!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-number-input__control button { color:var(--vt-text)!important; background:transparent!important; }
+html[data-vt-theme] .vt-sidebar .cs-message-list,
+html[data-vt-theme] .vt-sidebar .cs-message-list__scroll-wrapper { background:var(--vt-surface)!important; color:var(--vt-text)!important; }
+html[data-vt-theme] .vt-sidebar .cs-message__content { background:var(--vt-raised)!important; color:var(--vt-text)!important; }
+html[data-vt-theme] .vt-sidebar .cs-message__content-wrapper,
+html[data-vt-theme] .vt-sidebar .cs-message__html-content,
+html[data-vt-theme] .vt-sidebar .cs-message__sender-name { color:var(--vt-text)!important; }
+html[data-vt-theme] .vt-sidebar [role=tab] { color:var(--vt-muted)!important; }
+html[data-vt-theme] .vt-sidebar [role=tab][aria-selected=true] { color:var(--vt-text)!important; background:var(--vt-raised)!important; }
+html[data-vt-theme] .vt-sidebar-toggle { background:var(--vt-raised)!important; color:var(--vt-muted)!important; border:1px solid var(--vt-border)!important; border-radius:8px 0 0 8px; padding:0!important; }
+html[data-vt-theme] .vt-sidebar-toggle:hover { color:var(--vt-text)!important; }
+/* Keep track geometry and thumb translation consistent at both sizes/themes. */
+html[data-vt-theme] .chakra-drawer__content .chakra-switch__root { overflow:visible!important; flex-shrink:0!important; padding:2px!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-switch__control { --switch-width:36px; --switch-height:20px; --switch-diff:16px; width:36px!important; height:20px!important; min-width:36px!important; padding:2px!important; box-sizing:border-box!important; overflow:visible!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-switch__thumb { width:16px!important; height:16px!important; min-width:16px!important; transform:translateX(0)!important; background:white!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-switch__thumb[data-state=checked] { transform:translateX(16px)!important; }
+html[data-vt-theme] .vt-sidebar > .vt-sidebar-content { background:var(--vt-surface)!important; width:calc(100% - 24px); }
+html[data-vt-theme] .vt-sidebar { background:var(--vt-surface)!important; }
+/* Shared interaction surfaces: restrained contrast, one accent, consistent geometry. */
+:root[data-vt-theme="light"] { --vt-surface:#fafbfc; --vt-raised:#f0f2f5; --vt-text:#242934; --vt-muted:#727b8a; --vt-border:#dfe3e9; --vt-hover:#e9edf3; --vt-shadow:0 12px 32px #18243b18,0 2px 6px #18243b0a; }
+:root[data-vt-theme="dark"] { --vt-surface:#1b1d22; --vt-raised:#25282f; --vt-text:#e8ebf1; --vt-muted:#959dab; --vt-border:#353a44; --vt-hover:#303540; --vt-shadow:0 12px 32px #0005; }
+html[data-vt-theme] .chakra-select__content,
+html[data-vt-theme] .chakra-menu__content,
+html[data-vt-theme] .chakra-popover__content { border:1px solid var(--vt-border)!important; box-shadow:var(--vt-shadow)!important; padding:6px!important; border-radius:10px!important; }
+html[data-vt-theme] .chakra-select__item,
+html[data-vt-theme] .chakra-menu__item { color:var(--vt-text)!important; background:transparent!important; border-radius:6px!important; min-height:36px; padding:8px 12px!important; font-size:13px!important; line-height:1.5; transition:background .12s ease; }
+html[data-vt-theme] .chakra-select__item[data-highlighted],
+html[data-vt-theme] .chakra-menu__item[data-highlighted],
+html[data-vt-theme] .chakra-select__item:hover,
+html[data-vt-theme] .chakra-menu__item:hover { background:var(--vt-hover)!important; color:var(--vt-text)!important; }
+html[data-vt-theme] .chakra-select__item[data-state=checked],
+html[data-vt-theme] .chakra-menu__item[data-state=checked] { background:color-mix(in srgb,var(--vt-accent) 10%,var(--vt-surface))!important; color:var(--vt-accent)!important; }
+html[data-vt-theme] .chakra-select__item-indicator { color:var(--vt-accent)!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-select__trigger,
+html[data-vt-theme] .chakra-drawer__content input:not([type=checkbox]):not([type=radio]),
+html[data-vt-theme] .chakra-drawer__content textarea { border-radius:8px!important; box-shadow:none!important; transition:border-color .15s,background .15s; }
+html[data-vt-theme] .chakra-drawer__content .chakra-select__trigger:hover,
+html[data-vt-theme] .chakra-drawer__content input:hover { border-color:var(--vt-muted)!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-select__trigger[data-state=open],
+html[data-vt-theme] .chakra-drawer__content input:focus-visible,
+html[data-vt-theme] .chakra-drawer__content textarea:focus-visible { border-color:var(--vt-accent)!important; outline:2px solid color-mix(in srgb,var(--vt-accent) 18%,transparent)!important; outline-offset:1px; }
+html[data-vt-theme] .chakra-select__indicator,
+html[data-vt-theme] .chakra-drawer__closeTrigger { color:var(--vt-muted)!important; }
+html[data-vt-theme] .chakra-drawer__content [role=tab] { background:transparent!important; }
+html[data-vt-theme] .chakra-drawer__content [role=tab]:hover { color:var(--vt-text)!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-switch__control { background:var(--vt-border)!important; border:0!important; box-shadow:inset 0 0 0 1px #00000006!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-switch__control[data-state=checked] { background:var(--vt-accent)!important; }
+html[data-vt-theme] .chakra-drawer__content .chakra-switch__thumb { box-shadow:0 1px 3px #0002!important; }
+html[data-vt-theme] .chakra-tooltip__content { background:var(--vt-text)!important; color:var(--vt-surface)!important; border-radius:6px!important; box-shadow:var(--vt-shadow)!important; }
+html[data-vt-theme] button:disabled { opacity:.45; }
