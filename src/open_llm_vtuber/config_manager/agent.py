@@ -30,6 +30,8 @@ class BasicMemoryAgentConfig(I18nMixin, BaseModel):
     ] = Field(..., alias="llm_provider")
 
     max_tool_rounds: int = Field(8, ge=1, le=100)
+    history_max_messages: int = Field(24, ge=2, le=200)
+    history_max_chars: int = Field(16000, ge=1000, le=200000)
 
     faster_first_response: Optional[bool] = Field(True, alias="faster_first_response")
     segment_method: Literal["regex", "pysbd"] = Field("pysbd", alias="segment_method")

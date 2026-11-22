@@ -18,8 +18,10 @@ from starlette.responses import Response
 from starlette.staticfiles import StaticFiles as StarletteStaticFiles
 
 from .routes import init_client_ws_route, init_webtool_routes, init_proxy_route
-from .book_reader import init_book_routes
-from .media_library import init_media_routes
+from .task_history import init_task_routes
+from .timers import init_timer_routes
+from .scheduled_tasks import init_schedule_routes
+from .media.routes import init_book_routes, init_media_routes
 from .extensions import init_extension_routes
 from .computer_use.service import CONTROL, init_control_routes
 from .service_context import ServiceContext
@@ -118,6 +120,9 @@ class WebSocketServer:
         self.app.include_router(init_book_routes(self.default_context_cache))
         self.app.include_router(init_extension_routes(self.default_context_cache))
         self.app.include_router(init_control_routes())
+        self.app.include_router(init_task_routes())
+        self.app.include_router(init_timer_routes())
+        self.app.include_router(init_schedule_routes(self.default_context_cache, self.app))
         self.app.add_event_handler("shutdown", CONTROL.close)
 
         self.app.include_router(init_media_routes(self.default_context_cache))

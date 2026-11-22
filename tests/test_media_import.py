@@ -4,7 +4,7 @@ from types import SimpleNamespace
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from src.open_llm_vtuber.media_library import init_media_routes
+from src.open_llm_vtuber.media.routes import init_media_routes
 
 
 def test_import_catalog_duplicate_and_file(tmp_path, monkeypatch):

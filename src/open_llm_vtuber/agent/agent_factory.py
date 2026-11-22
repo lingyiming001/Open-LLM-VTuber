@@ -70,6 +70,8 @@ class AgentFactory:
             # Create the agent with the LLM and live2d_model
             return BasicMemoryAgent(
                 max_tool_rounds=basic_memory_settings.get("max_tool_rounds", 8),
+                history_max_messages=basic_memory_settings.get("history_max_messages", 24),
+                history_max_chars=basic_memory_settings.get("history_max_chars", 16000),
                 llm=llm,
                 system=system_prompt,
                 live2d_model=live2d_model,

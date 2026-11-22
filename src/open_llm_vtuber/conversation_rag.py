@@ -20,6 +20,21 @@ def tokens(text):
     return words
 
 
+def recall_query(query, history):
+    """Recover the topic of short follow-ups from the user's own words."""
+    normalized = query.strip().rstrip("。！？!?").strip()
+    followups = {"继续", "继续说", "接着说", "然后呢", "还有呢", "下一步呢", "那下一步呢", "具体呢", "展开说说"}
+    if normalized not in followups:
+        return query
+    for message in reversed(history[-8:]):
+        content = message.get("content")
+        if message.get("role") == "user" and isinstance(content, str):
+            topic = content.strip().rstrip("。！？!?").strip()
+            if topic and topic not in followups:
+                return topic[:500]
+    return ""
+
+
 @lru_cache(maxsize=128)
 def _indexed_file(filename, modified, changed, size):
     """Cache parsing and tokenization; every query still validates source metadata."""

@@ -39,12 +39,6 @@
             event.stopImmediatePropagation();
             return;
           }
-          if (data.type === 'tool_call_status' && data.tool_name === 'local_stage') {
-            event.stopImmediatePropagation();
-            if (data.status === 'completed' && data.stage_action) {
-              window.dispatchEvent(new CustomEvent('vtuber-stage-action', {detail: data.stage_action}));
-            }
-          }
           if (data.type === 'user-input-transcription') {
             window.dispatchEvent(new CustomEvent('vtuber-media-command', {detail: data.text}));
           }

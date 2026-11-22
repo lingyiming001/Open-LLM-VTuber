@@ -1,5 +1,6 @@
 import json
 import datetime
+from time import monotonic
 from loguru import logger
 from typing import (
     Dict,
@@ -10,6 +11,7 @@ from typing import (
     AsyncIterator,
 )
 
+from ..task_history import run_tracked
 from .types import ToolCallObject
 from .mcp_client import MCPClient
 from .tool_manager import ToolManager
@@ -218,13 +220,19 @@ class ToolExecutor:
                 + "Z",
             }
 
+            started = monotonic()
             # Execute the tool
             (
                 is_error,
                 text_content,
                 metadata,
                 content_items,
-            ) = await self.run_single_tool(tool_name, tool_id, tool_input)
+            ) = await run_tracked(
+                tool_name, tool_input,
+                lambda: self.run_single_tool(tool_name, tool_id, tool_input),
+            )
+
+            duration_ms = round((monotonic() - started) * 1000)
 
             # Determine content for status update and LLM result format
             status_content = text_content  # Default to text content
@@ -279,6 +287,7 @@ class ToolExecutor:
                 "tool_id": tool_id,
                 "tool_name": tool_name,
                 "status": "error" if is_error else "completed",
+                "duration_ms": duration_ms,
                 "content": status_content
                 if not is_error
                 else f"Error: {text_content}",  # Use descriptive content or error message
@@ -286,7 +295,7 @@ class ToolExecutor:
                 + "Z",
             }
 
-            if tool_name == "local_stage" and metadata.get("stage_action"):
+            if tool_name in {"local_stage", "local_bookshelf"} and metadata.get("stage_action"):
                 status_update["stage_action"] = metadata["stage_action"]
 
             # For stagehand_navigate tool, include browser view links if available
@@ -344,32 +353,28 @@ class ToolExecutor:
                 return False, json.dumps(result, ensure_ascii=False), {}, []
             except (ValueError, OSError) as exc:
                 return True, str(exc), {}, []
-        if tool_name == "local_stage":
-            import asyncio
-            from ..stage_tool import control_stage
+        if tool_name == "local_timer":
+            from ..computer_use.access import PASSIVE_TURN
+            from ..timers import TimerInput, create_timer, list_timers
 
             try:
-                result, command = await asyncio.to_thread(
-                    control_stage, **(tool_input or {})
-                )
-                return (
-                    False,
-                    json.dumps(result, ensure_ascii=False),
-                    {"stage_action": command},
-                    [],
-                )
-            except (OSError, TypeError, ValueError) as exc:
-                return True, str(exc), {}, []
-
-        if tool_name == "local_bookshelf":
-            import asyncio
-            from ..bookshelf import bookshelf
-
-            try:
-                result = await asyncio.to_thread(bookshelf, **(tool_input or {}))
+                arguments = tool_input or {}
+                if arguments.get("action") == "list":
+                    result = list_timers()
+                elif arguments.get("action") == "create" and not PASSIVE_TURN.get():
+                    result = create_timer(TimerInput(**arguments))
+                elif arguments.get("action") == "schedule" and not PASSIVE_TURN.get():
+                    from ..scheduled_tasks import ScheduleInput, create_schedule
+                    result = create_schedule(ScheduleInput(**arguments))
+                else:
+                    return True, "创建定时任务需要用户明确要求。", {}, []
                 return False, json.dumps(result, ensure_ascii=False), {}, []
-            except Exception as exc:
+            except (TypeError, ValueError) as exc:
                 return True, str(exc), {}, []
+
+        from ..media.tools import TOOL_NAMES, execute_media_tool
+        if tool_name in TOOL_NAMES:
+            return await execute_media_tool(tool_name, tool_input)
 
         tool_info = self._tool_manager.get_tool(tool_name)
 

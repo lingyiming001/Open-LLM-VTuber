@@ -1,8 +1,8 @@
 import asyncio
 from contextlib import aclosing
-from ...library_context import library_context
+from ...media.context import library_context
 from ...memory_store import SCOPE, structured_context
-from ...conversation_rag import memory_context
+from ...conversation_rag import memory_context, recall_query
 from typing import (
     AsyncIterator,
     List,
@@ -52,10 +52,15 @@ class BasicMemoryAgent(AgentInterface):
         tool_executor: Optional[ToolExecutor] = None,
         mcp_prompt_string: str = "",
         max_tool_rounds: int = 8,
+        history_max_messages: int = 24,
+        history_max_chars: int = 16000,
     ):
         """Initialize agent with LLM and configuration."""
         super().__init__()
         self._max_tool_rounds = max_tool_rounds
+        self._history_max_messages = history_max_messages
+        self._history_max_chars = history_max_chars
+        self._direct_state = {}
         self._memory = []
         self._live2d_model = live2d_model
         self._tts_preprocessor_config = tts_preprocessor_config
@@ -171,6 +176,7 @@ class BasicMemoryAgent(AgentInterface):
         """Load memory from chat history."""
         self._rag_conf_uid = conf_uid
         self._rag_history_uid = history_uid
+        self._direct_state.clear()
         messages = get_history(conf_uid, history_uid)
 
         self._memory = []
@@ -239,7 +245,8 @@ class BasicMemoryAgent(AgentInterface):
         self, input_data: BatchInput, resource_context: str = ""
     ) -> List[Dict[str, Any]]:
         """Prepare messages for LLM API call."""
-        messages = self._memory.copy()
+        from ..history import bounded_history
+        messages = bounded_history(self._memory, self._history_max_messages, self._history_max_chars)
         user_content = []
         if resource_context:
             user_content.append({"type": "text", "text": resource_context})
@@ -315,16 +322,17 @@ class BasicMemoryAgent(AgentInterface):
             query = self._to_text_prompt(input_data)
             if input_data.metadata and input_data.metadata.get("proactive_speak"):
                 query = " ".join(str(m.get("content", "")) for m in self._memory[-4:])
+            recall = recall_query(query, self._memory)
             scope = getattr(self, "_rag_conf_uid", "")
             SCOPE.set((scope, getattr(self, "_rag_history_uid", "")))
             structured, resource_context, recalled = await asyncio.gather(
-                asyncio.to_thread(structured_context, query, scope),
+                asyncio.to_thread(structured_context, recall, scope),
                 asyncio.to_thread(
-                    library_context, bool(self._use_mcpp and self._tool_manager)
+                    library_context, bool(self._use_mcpp and self._tool_manager), query
                 ),
                 asyncio.to_thread(
                     memory_context,
-                    query,
+                    recall,
                     getattr(self, "_rag_conf_uid", ""),
                     getattr(self, "_rag_history_uid", ""),
                 ),
@@ -349,6 +357,7 @@ class BasicMemoryAgent(AgentInterface):
                 self._add_message,
                 prompt=self._mcp_prompt_string,
                 max_tool_rounds=self._max_tool_rounds,
+                direct_state=self._direct_state,
             )
             async with aclosing(graph.stream(messages)) as stream:
                 async for output in stream:

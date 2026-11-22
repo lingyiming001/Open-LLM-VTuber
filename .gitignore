@@ -101,3 +101,6 @@ live_history/
 
 # Locally cloned third-party development dependency
 /blivedm/
+
+# Local tool task database
+.tool_tasks/

@@ -211,3 +211,34 @@ class GraphTests(unittest.IsolatedAsyncioTestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class LocalShortcutTests(unittest.IsolatedAsyncioTestCase):
+    async def run_shortcut(self, text, name, payload, cursor=None):
+        import json
+        class LocalExecutor:
+            async def execute_tools(self, calls, caller_mode):
+                yield {'type': 'tool_call_status', 'tool_name': name, 'status': 'completed', 'content': json.dumps(payload, ensure_ascii=False)}
+                yield {'type': 'final_tool_results', 'results': [{'role': 'tool', 'content': json.dumps(payload, ensure_ascii=False)}]}
+        model = Model([])  # Any model request would fail the test.
+        graph = ConversationGraph(model, 'system', [{'type': 'function', 'function': {'name': name}}], LocalExecutor(), lambda *_: None, direct_state=cursor)
+        events = [event async for event in graph.stream([{'role': 'user', 'content': text}])]
+        self.assertEqual(model.requests, [])
+        return events
+
+    async def test_pause_has_zero_model_requests(self):
+        events = await self.run_shortcut('暂停视频', 'local_stage', {'dispatched': 'pause'})
+        self.assertEqual(events[-1], '已发送暂停指令。')
+
+    async def test_read_preserves_original_and_continuation(self):
+        from unittest.mock import patch
+        cursor = {}
+        with patch('src.open_llm_vtuber.media.bookshelf.catalog', return_value=['白居易诗全集.epub']):
+            events = await self.run_shortcut('朗读《白居易诗全集》', 'local_bookshelf', {'book': '白居易诗全集.epub', 'start': 0, 'next_start': 2, 'passages': ['原文一。', '原文二。']}, cursor)
+        self.assertEqual(events[-1], '原文一。\n原文二。')
+        self.assertEqual(cursor, {'book': '白居易诗全集.epub', 'next_start': 2, 'awaiting_book': False})
+        events = await self.run_shortcut('继续读', 'local_bookshelf', {'book': cursor['book'], 'start': 2, 'next_start': 2, 'passages': []}, cursor)
+        self.assertEqual(events[-1], '这本书已经读完了。')
+
+    async def test_failed_tool_never_claims_success(self):
+        events = await self.run_shortcut('暂停视频', 'local_stage', {})
+        self.assertIn('没有完成', events[-1])

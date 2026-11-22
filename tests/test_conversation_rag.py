@@ -39,3 +39,15 @@ class ConversationRagTests(unittest.TestCase):
             path.write_text('[{"role":"human","content":"今天喜欢看动物纪录片"}]')
             self.assertEqual(retrieve('音乐', 'one', root=Path(directory)), [])
             self.assertTrue(retrieve('动物', 'one', root=Path(directory)))
+
+
+def test_followup_uses_recent_user_topic_only():
+    from src.open_llm_vtuber.conversation_rag import recall_query
+
+    history = [
+        {"role": "user", "content": "继续优化白居易诗集的章节定位"},
+        {"role": "assistant", "content": "可能需要修改 EPUB 目录解析"},
+    ]
+    assert recall_query("那下一步呢？", history) == "继续优化白居易诗集的章节定位"
+    assert recall_query("今天聊音乐", history) == "今天聊音乐"
+    assert recall_query("继续", []) == ""

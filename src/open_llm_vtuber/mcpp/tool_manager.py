@@ -25,9 +25,10 @@ class ToolManager:
             formatted_tools_claude or []
         )
 
-        from .. import bookshelf, stage_tool, memory_store
+        from .. import memory_store, timers
+        from ..media import bookshelf, playback
 
-        for name, tool in (("local_bookshelf", bookshelf), ("local_stage", stage_tool), ("local_memory", memory_store)):
+        for name, tool in (("local_bookshelf", bookshelf), ("local_stage", playback), ("local_memory", memory_store), ("local_timer", timers)):
             description, schema = tool.DESCRIPTION, tool.SCHEMA
             self.tools[name] = FormattedTool(
                 input_schema=schema, related_server="local", description=description

@@ -248,6 +248,26 @@ def delete_history(conf_uid: str, history_uid: str) -> bool:
     return False
 
 
+def clear_chat_histories(conf_uid: str, keep_uid: str) -> tuple[int, int]:
+    """Remove archived chat files while preserving the newly opened chat."""
+    from pathlib import Path
+
+    folder = Path(_ensure_conf_dir(conf_uid))
+    if not folder.resolve().is_relative_to(Path(HISTORY_ROOT).resolve()):
+        raise ValueError("History folder is outside the history root")
+    deleted = failed = 0
+    for path in folder.glob("*.json"):
+        if path.stem == keep_uid or not (path.is_file() or path.is_symlink()):
+            continue
+        try:
+            path.unlink(missing_ok=True)
+            deleted += 1
+        except OSError as exc:
+            logger.error(f"Failed to clear history {path.name}: {exc}")
+            failed += 1
+    return deleted, failed
+
+
 def get_history_list(conf_uid: str) -> List[dict]:
     """Get list of histories with their latest messages"""
     if not conf_uid:
@@ -255,7 +275,6 @@ def get_history_list(conf_uid: str) -> List[dict]:
 
     histories = []
     conf_dir = _ensure_conf_dir(conf_uid)
-    empty_history_uids = []
 
     try:
         for filename in os.listdir(conf_dir):
@@ -274,7 +293,7 @@ def get_history_list(conf_uid: str) -> List[dict]:
                         msg for msg in messages if msg["role"] != "metadata"
                     ]
                     if not actual_messages:
-                        empty_history_uids.append(history_uid)
+                        histories.append({"uid": history_uid, "latest_message": None, "timestamp": None})
                         continue
 
                     latest_message = actual_messages[-1]
@@ -289,15 +308,6 @@ def get_history_list(conf_uid: str) -> List[dict]:
             except Exception as e:
                 logger.error(f"Error reading history file {filename}: {e}")
                 continue
-
-        # Clean up empty histories if there are other non-empty ones
-        if len(empty_history_uids) > 0 and len(os.listdir(conf_dir)) > 1:
-            for uid in empty_history_uids:
-                try:
-                    os.remove(os.path.join(conf_dir, f"{uid}.json"))
-                    logger.info(f"Removed empty history file: {uid}")
-                except Exception as e:
-                    logger.error(f"Failed to remove empty history file {uid}: {e}")
 
         histories.sort(
             key=lambda x: x["timestamp"] if x["timestamp"] else "", reverse=True

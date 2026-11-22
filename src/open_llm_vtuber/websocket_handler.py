@@ -16,6 +16,7 @@ from .chat_group import (
 from .message_handler import message_handler
 from .utils.stream_audio import prepare_audio_payload
 from .chat_history_manager import (
+    clear_chat_histories,
     create_new_history,
     get_history,
     delete_history,
@@ -38,6 +39,7 @@ class MessageType(Enum):
         "fetch-and-set-history",
         "create-new-history",
         "delete-history",
+        "clear-history",
     ]
     CONVERSATION = ["mic-audio-end", "text-input", "ai-speak-signal"]
     CONFIG = ["fetch-configs", "switch-config"]
@@ -83,6 +85,7 @@ class WebSocketHandler:
             "fetch-and-set-history": self._handle_fetch_history,
             "create-new-history": self._handle_create_history,
             "delete-history": self._handle_delete_history,
+            "clear-history": self._handle_clear_history,
             "interrupt-signal": self._handle_interrupt,
             "mic-audio-data": self._handle_audio_data,
             "mic-audio-end": self._handle_conversation_trigger,
@@ -398,7 +401,7 @@ class WebSocketHandler:
         context = self.client_contexts[client_uid]
         histories = get_history_list(context.character_config.conf_uid)
         await websocket.send_text(
-            json.dumps({"type": "history-list", "histories": histories})
+            json.dumps({"type": "history-list", "histories": histories, "history_uid": context.history_uid})
         )
 
     async def _handle_fetch_history(
@@ -449,6 +452,35 @@ class WebSocketHandler:
                     }
                 )
             )
+
+    async def _handle_clear_history(self, websocket: WebSocket, client_uid: str, data: WSMessage):
+        context = self.client_contexts[client_uid]
+        conf_uid = context.character_config.conf_uid
+        group = self.chat_group_manager.get_client_group(client_uid)
+        task_key = group.group_id if group and len(group.members) > 1 else client_uid
+        task = self.current_conversation_tasks.get(task_key)
+        other_open = any(
+            uid != client_uid and other.history_uid
+            and other.character_config.conf_uid == conf_uid
+            for uid, other in self.client_contexts.items()
+        )
+        if (task and not task.done()) or other_open:
+            await websocket.send_json({"type": "history-cleared", "success": False,
+                                       "message": "请先结束当前对话，并关闭使用此角色的其他页面。"})
+            return
+        history_uid = create_new_history(conf_uid)
+        if not history_uid:
+            await websocket.send_json({"type": "history-cleared", "success": False,
+                                       "message": "无法创建新会话，原记录仍在。"})
+            return
+        context.agent_engine.set_memory_from_history(conf_uid=conf_uid, history_uid=history_uid)
+        context.history_uid = history_uid
+        deleted, failed = clear_chat_histories(conf_uid, history_uid)
+        await websocket.send_json({
+            "type": "history-cleared", "success": failed == 0,
+            "history_uid": history_uid, "histories": get_history_list(conf_uid),
+            "message": f"已删除 {deleted} 条会话" + (f"，{failed} 条删除失败。" if failed else "。"),
+        })
 
     async def _handle_delete_history(
         self, websocket: WebSocket, client_uid: str, data: dict

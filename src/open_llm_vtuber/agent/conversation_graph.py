@@ -9,10 +9,12 @@ import json
 from contextlib import aclosing
 from typing import Any, TypedDict
 from uuid import uuid4
+from loguru import logger
 
 from langgraph.graph import END, START, StateGraph
 
 from .stage_stream import StageStream
+from ..media.commands import local_command
 from .browser_control import browser_navigation_url
 from ..mcpp.json_detector import StreamJSONDetector
 from ..mcpp.types import ToolCallObject, ToolCallFunctionObject
@@ -25,13 +27,15 @@ class TurnState(TypedDict):
     prompt_mode: bool
     seen_inline: set[str]
     retry: bool
+    direct: bool
     emit: Any
 
 
 class ConversationGraph:
     def __init__(
-        self, llm, system, tools, executor, remember, *, prompt="", max_tool_rounds=8
+        self, llm, system, tools, executor, remember, *, prompt="", max_tool_rounds=8, direct_state=None
     ):
+        self.direct_state = direct_state if direct_state is not None else {}
         self.llm = llm
         self.system = system
         self.tools = tools
@@ -46,7 +50,7 @@ class ConversationGraph:
         graph.add_edge(START, "preflight")
         graph.add_conditional_edges("preflight", self._preflight_route)
         graph.add_conditional_edges("model", self._route)
-        graph.add_edge("tools", "model")
+        graph.add_conditional_edges("tools", lambda state: END if state.get("direct") else "model")
         self.graph = graph.compile()
 
     @staticmethod
@@ -66,6 +70,26 @@ class ConversationGraph:
         return "tools" if state["calls"] else "model"
 
     def _preflight(self, state: TurnState):
+        user = next((m for m in reversed(state['messages']) if m.get('role') == 'user'), {})
+        content = user.get('content')
+        has_images = isinstance(content, list) and any(p.get('type') == 'image_url' for p in content if isinstance(p, dict))
+        enabled = {t.get('function', {}).get('name') for t in self.tools}
+        prior_users = [self._message_text(m.get('content')).strip().rstrip('。！!') for m in state['messages'] if m.get('role') == 'user'][:-1]
+        selection_requests = {'阅读书籍', '朗读书籍', '读一本书', '换一本书', '换一本书籍', '换本书', '我想读书'}
+        if prior_users and prior_users[-1] in selection_requests:
+            self.direct_state['awaiting_book'] = True
+        user_text = self._message_text(content).strip().rstrip('。！!')
+        if not has_images and user_text in {'阅读书籍', '朗读书籍', '读一本书', '换一本书', '换一本书籍', '换本书', '我想读书'}:
+            self.direct_state['awaiting_book'] = True
+        try:
+            command = None if has_images else local_command(self._message_text(content), enabled, self.direct_state)
+        except (OSError, ValueError):
+            command = None
+        if command and self.executor:
+            name, args = command
+            logger.info('Local command route: {} (no LLM request)', name)
+            call = ToolCallObject(id=f"call_{uuid4().hex}", function=ToolCallFunctionObject(name=name, arguments=json.dumps(args, ensure_ascii=False)))
+            return {'calls': [call], 'direct': True}
         browser_enabled = any(
             tool.get("function", {}).get("name") == "local_browser"
             for tool in self.tools
@@ -221,6 +245,35 @@ class ConversationGraph:
                     writer(event)
         if not results:
             raise RuntimeError("ToolExecutor returned no tool results")
+        for call, tool_result in zip(state["calls"], results):
+            name = call.function.name if isinstance(call, ToolCallObject) else call.get("name")
+            if name != "local_bookshelf":
+                continue
+            try:
+                book_result = json.loads(tool_result.get("content", ""))
+                if book_result.get("passages") and isinstance(book_result.get("next_start"), int):
+                    self.direct_state.update(book=book_result["book"], next_start=book_result["next_start"], awaiting_book=False)
+            except (TypeError, ValueError):
+                pass
+        if state.get("direct"):
+            content = results[0].get("content", "")
+            try:
+                result = json.loads(content)
+            except (TypeError, ValueError):
+                result = {}
+            if result.get("passages"):
+                self.direct_state.update(book=result["book"], next_start=result["next_start"], awaiting_book=False)
+                reply = "\n".join(result["passages"])
+                memory = f"已读取《{result['book']}》第 {result['start']} 至 {result['next_start'] - 1} 段。"
+            elif "passages" in result:
+                reply = memory = "这本书已经读完了。"
+            elif result.get("dispatched"):
+                reply = memory = {"play": "正在尝试打开。", "pause": "已发送暂停指令。", "resume": "已发送继续播放指令。", "stop": "已发送停止指令。", "next": "已发送切换下一项的指令。", "previous": "已发送切换上一项的指令。"}.get(result['dispatched'], "已发送操作指令。")
+            else:
+                reply = memory = "这次操作没有完成，请检查文件或服务后重试。"
+            self.remember(memory, "assistant")
+            writer(reply)
+            return {"rounds": state["rounds"] + 1, "calls": []}
         messages = list(state["messages"])
         if state["prompt_mode"]:
             messages.append(
@@ -250,6 +303,7 @@ class ConversationGraph:
                         ),
                         "seen_inline": set(),
                         "retry": False,
+                        "direct": False,
                         "emit": queue.put_nowait,
                     },
                     config={"recursion_limit": 2 * self.max_tool_rounds + 5},
