@@ -53,6 +53,7 @@ function BrowserPanel(): JSX.Element {
       >
         <Box
           {...sidebarStyles.browserPanel.browserContainer}
+          className="vt-media-preview"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
           position="relative"

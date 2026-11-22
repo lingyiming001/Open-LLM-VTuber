@@ -8,6 +8,7 @@ import { sidebarStyles } from './sidebar-styles';
 import SettingUI from './setting/setting-ui';
 import ChatHistoryPanel from './chat-history-panel';
 import BottomTab from './bottom-tab';
+import TaskDrawer from './task-drawer';
 import HistoryDrawer from './history-drawer';
 import ResourceDrawer from './resource-drawer';
 import ExtensionDrawer from './extension-drawer';
@@ -61,7 +62,7 @@ const ModeMenu = memo(({ setMode, currentMode, isElectron }: {
       <FiLayers />
     </Menu.Trigger>
     <Menu.Positioner>
-      <Menu.Content>
+      <Menu.Content className="vt-mode-picker">
         <Menu.RadioItemGroup value={currentMode}>
           <Menu.RadioItem value="window" onClick={() => setMode('window')}>
             <Menu.ItemIndicator />
@@ -89,30 +90,25 @@ const ModeMenu = memo(({ setMode, currentMode, isElectron }: {
 ModeMenu.displayName = 'ModeMenu';
 
 const HeaderButtons = memo(({ onSettingsOpen, onNewHistory, setMode, currentMode, isElectron }: HeaderButtonsProps) => (
-  <Box className="vt-toolbar" display="flex" gap={1} flexWrap="wrap">
-    <Button onClick={onSettingsOpen}>
-      <FiSettings />
-    </Button>
-
-    <GroupDrawer>
-      <Button>
-        <FiUsers />
+  <Box className="vt-toolbar" role="group" aria-label="侧栏工具">
+    <Box className="vt-toolbar-group" role="group" aria-label="会话">
+      <Button className="vt-new-chat" aria-label="新会话" title="新会话" onClick={onNewHistory}>
+        <FiPlus /><span>新会话</span>
       </Button>
-    </GroupDrawer>
-
-    <HistoryDrawer>
-      <Button>
-        <FiClock />
-      </Button>
-    </HistoryDrawer>
-
-    <Button onClick={onNewHistory}>
-      <FiPlus />
-    </Button>
-
-    <ModeMenu setMode={setMode} currentMode={currentMode} isElectron={isElectron} />
-    <ResourceDrawer />
-    <ExtensionDrawer />
+      <HistoryDrawer>
+        <Button aria-label="聊天历史" title="聊天历史"><FiClock /></Button>
+      </HistoryDrawer>
+    </Box>
+    <Box className="vt-toolbar-group" role="group" aria-label="工作区">
+      <GroupDrawer>
+        <Button aria-label="群组" title="群组"><FiUsers /></Button>
+      </GroupDrawer>
+      <ResourceDrawer />
+      <TaskDrawer />
+      <ExtensionDrawer />
+      <ModeMenu setMode={setMode} currentMode={currentMode} isElectron={isElectron} />
+      <Button aria-label="设置" title="设置" onClick={onSettingsOpen}><FiSettings /></Button>
+    </Box>
   </Box>
 ));
 
@@ -126,7 +122,7 @@ const SidebarContent = memo(({
   isElectron
 }: HeaderButtonsProps) => (
   <Box {...sidebarStyles.sidebar.content}>
-    <Box {...sidebarStyles.sidebar.header}>
+    <Box {...sidebarStyles.sidebar.header} className="vt-sidebar-header">
       <HeaderButtons
         onSettingsOpen={onSettingsOpen}
         onNewHistory={onNewHistory}
@@ -159,8 +155,7 @@ function Sidebar({ isCollapsed = false, onToggle }: SidebarProps): JSX.Element {
       <ControlStop />
       <ToggleButton isCollapsed={isCollapsed} onToggle={onToggle} />
 
-      {!isCollapsed && (
-        <Box className="vt-sidebar-content" display={settingsOpen ? 'none' : 'flex'} flex={1} minH={0}>
+      <Box className="vt-sidebar-content" display={isCollapsed || settingsOpen ? 'none' : 'flex'} flex={1} minH={0}>
         <SidebarContent
           onSettingsOpen={onSettingsOpen}
           onNewHistory={createNewHistory}
@@ -168,8 +163,7 @@ function Sidebar({ isCollapsed = false, onToggle }: SidebarProps): JSX.Element {
           currentMode={currentMode}
           isElectron={isElectron}
         />
-        </Box>
-      )}
+      </Box>
 
       {!isCollapsed && settingsOpen && (
         <SettingUI

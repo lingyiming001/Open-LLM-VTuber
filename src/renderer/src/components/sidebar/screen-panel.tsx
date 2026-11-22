@@ -91,6 +91,7 @@ function ScreenPanel(): JSX.Element {
       >
         <Box
           {...sidebarStyles.screenPanel.screenContainer}
+          className="vt-media-preview"
           onClick={toggleCapture}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}

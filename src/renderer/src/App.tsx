@@ -5,6 +5,7 @@ import { lazy, Suspense, useState, useEffect, useRef } from "react";
 // import Canvas from './components/canvas/canvas'; // Likely unused now
 import Sidebar from "./components/sidebar/sidebar";
 import Footer from "./components/footer/footer";
+import { useBgUrl } from "./context/bgurl-context";
 import { BgUrlProvider } from "./context/bgurl-context";
 import { layoutStyles } from "./layout";
 import WebSocketHandler from "./services/websocket-handler";
@@ -25,12 +26,32 @@ import WebSocketStatus from "./components/canvas/ws-status";
 import Subtitle from "./components/canvas/subtitle";
 import { ModeProvider, useMode } from "./context/mode-context";
 
+import { useCharacterDock } from "./components/sidebar/character-dock";
+import VideoPanel from "./components/sidebar/video-panel";
+import BookReader from "./components/canvas/book-reader";
+import { useContentModeStore } from "./stores/content-mode-store";
+
 const Live2D = lazy(async () => {
   const module = await import("./components/canvas/live2d");
   return { default: module.Live2D };
 });
 
 function AppContent(): JSX.Element {
+  const { contentMode, view, readingEnabled, videoEnabled, setView, videoFit } = useContentModeStore();
+  const readingMode = contentMode === 'reading' && readingEnabled;
+  const videoMode = contentMode === 'video' && videoEnabled;
+  useEffect(() => {
+    const openVideo = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      if (detail?.action === 'play' && detail?.kind === 'videos') setView('video');
+    };
+    const returnToChat = (event: KeyboardEvent) => { if (event.key === 'Escape') useContentModeStore.getState().reset(); };
+    window.addEventListener('vtuber-stage-action', openVideo);
+    window.addEventListener('keydown', returnToChat);
+    return () => { window.removeEventListener('vtuber-stage-action', openVideo); window.removeEventListener('keydown', returnToChat); };
+  }, []);
+  const { backgroundUrl } = useBgUrl();
+  const dockRect = useCharacterDock((state) => state.rect);
   const [showSidebar, setShowSidebar] = useState(true);
   const [isFooterCollapsed, setIsFooterCollapsed] = useState(false);
   const { mode } = useMode();
@@ -97,10 +118,13 @@ function AppContent(): JSX.Element {
         ref={live2dContainerRef}
         // Apply styles conditionally based on mode
         // Use the function to get dynamic responsive styles for window mode
-        {...(mode === "window"
+        {...(mode === "window" && (readingMode || videoMode) ? { ...live2dBaseStyle, position: "fixed" as const, transition: "none", top: `${dockRect?.top ?? 0}px`, left: `${dockRect?.left ?? 0}px`, width: `${dockRect?.width ?? 0}px`, height: `${dockRect?.height ?? 0}px`, visibility: dockRect ? "visible" : "hidden", zIndex: 12, borderRadius: "8px", border: "1px solid var(--vt-border)", bg: "var(--vt-surface)" } : mode === "window"
           ? getResponsiveLive2DWindowStyle(showSidebar)
           : live2dPetStyle)}
       >
+        {mode === "window" && (readingMode || videoMode) && (
+          <Box position="absolute" inset="0" backgroundImage={`url(${JSON.stringify(backgroundUrl)})`} backgroundSize="cover" backgroundPosition="center" pointerEvents="none" />
+        )}
         <Suspense fallback={null}>
           <Live2D />
         </Suspense>
@@ -123,6 +147,10 @@ function AppContent(): JSX.Element {
             </Box>
             <Box {...layoutStyles.mainContent}>
               <Background />
+              <Box position="absolute" top="0" left="0" right="0" bottom={{ base: isFooterCollapsed ? '20px' : '100px', md: isFooterCollapsed ? '24px' : '120px' }}>
+                <Box position="absolute" inset="0" display={view === 'reading' ? 'block' : 'none'}><BookReader /></Box>
+                <VideoPanel expanded={view === 'video'} fit={videoFit} />
+              </Box>
               <Box position="absolute" top="20px" left="20px" zIndex={10}>
                 <WebSocketStatus />
               </Box>
@@ -133,11 +161,15 @@ function AppContent(): JSX.Element {
                 transform="translateX(-50%)"
                 zIndex={10}
                 width="60%"
+                pointerEvents="none"
               >
                 <Subtitle />
               </Box>
               <Box
                 {...layoutStyles.footer}
+                position="absolute"
+                bottom="0"
+                flexShrink={0}
                 zIndex={10}
                 {...(isFooterCollapsed && layoutStyles.collapsedFooter)}
               >

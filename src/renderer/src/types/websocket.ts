@@ -18,6 +18,7 @@ export interface DisplayText {
 }
 
 export interface Message {
+  duration_ms?: number;
   id: string;
   content: string;
   role: 'ai' | 'human';

@@ -27,6 +27,11 @@ export default function ResourceDrawer() {
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Resource | null>(null);
   const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    const openVideos = () => { setFilter('videos'); setOpen(true); };
+    window.addEventListener('vt-open-resource-videos', openVideos);
+    return () => window.removeEventListener('vt-open-resource-videos', openVideos);
+  }, []);
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
@@ -70,14 +75,13 @@ export default function ResourceDrawer() {
     <DrawerRoot open={open} onOpenChange={(e) => setOpen(e.open)} placement="start">
       <DrawerTrigger asChild><Button aria-label="资源库" title="资源库"><FiFolder /></Button></DrawerTrigger>
       <DrawerBackdrop />
-      <DrawerContent className="vt-feature-drawer" bg="var(--vt-surface)" color="var(--vt-text)" width="620px" maxW="100vw">
+      <DrawerContent className="vt-feature-drawer vt-inspector vt-inspector--resources" bg="var(--vt-surface)" color="var(--vt-text)" width="620px" maxW="100vw">
         <DrawerHeader borderBottom="1px solid" borderColor="whiteAlpha.100" pb={5}>
           <DrawerTitle fontSize="xl">资源库</DrawerTitle>
-          <Text color="var(--vt-muted)" fontSize="sm" mt={2}>收藏本地素材，随时浏览与使用</Text>
           <DrawerCloseTrigger />
         </DrawerHeader>
         <DrawerBody py={5}>
-          <Box border="1px dashed" borderColor="whiteAlpha.300" borderRadius="xl" p={6} textAlign="center" bg="whiteAlpha.50"
+          <Box className="vt-resource-upload" border="1px dashed" borderColor="whiteAlpha.300" borderRadius="xl" p={3} textAlign="center" bg="whiteAlpha.50"
             onDragOver={(e) => e.preventDefault()} onDrop={(e) => { e.preventDefault(); void importFiles(Array.from(e.dataTransfer.files)); }}>
             <Button onClick={() => input.current?.click()} disabled={busy}><FiUpload />{busy ? '正在导入…' : '导入资源'}</Button>
             <input ref={input} type="file" multiple accept={accept} hidden onChange={(e) => { void importFiles(Array.from(e.target.files || [])); e.target.value = ''; }} />
@@ -86,8 +90,8 @@ export default function ResourceDrawer() {
           </Box>
           <Text role="status" fontSize="sm" color="green.300" mt={3}>{message}</Text>
           {error && <Box role="alert" color="red.300" fontSize="sm" whiteSpace="pre-wrap" my={3}>{error}<Button size="xs" ml={2} onClick={() => { setError(''); void refresh(); }}>刷新</Button></Box>}
-          <Box display="flex" gap={2} flexWrap="wrap" my={4}>
-            {[{ kind: 'all', label: '全部' }, ...categories].map((c) => <Button key={c.kind} size="sm" bg={filter === c.kind ? 'var(--vt-accent)' : 'var(--vt-raised)'} color={filter === c.kind ? 'white' : 'var(--vt-text)'} onClick={() => setFilter(c.kind)}>{c.label} {items.filter((i) => c.kind === 'all' || i.kind === c.kind).length}</Button>)}
+          <Box className="vt-inspector-filters" display="flex" gap={2} flexWrap="wrap" my={4}>
+            {[{ kind: 'all', label: '全部' }, ...categories].map((c) => <Button key={c.kind} aria-pressed={filter === c.kind} size="sm" bg={filter === c.kind ? 'var(--vt-accent)' : 'var(--vt-raised)'} color={filter === c.kind ? 'white' : 'var(--vt-text)'} onClick={() => setFilter(c.kind)}>{c.label} {items.filter((i) => c.kind === 'all' || i.kind === c.kind).length}</Button>)}
           </Box>
           <Input aria-label="搜索资源" placeholder="搜索资源名称…" value={search} onChange={(e) => setSearch(e.target.value)} mb={4} />
           {selected && <Box mb={4} p={3} borderRadius="lg" bg="blackAlpha.400">
@@ -101,13 +105,16 @@ export default function ResourceDrawer() {
           {loading ? <Text color="var(--vt-muted)">正在加载…</Text> : visible.length === 0 ? <Box textAlign="center" py={10} color="var(--vt-muted)">{items.length ? '没有匹配的资源' : '资源库还是空的，导入第一份素材吧'}</Box> : visible.map((item) => {
             const category = categories.find((c) => c.kind === item.kind)!;
             const Icon = category.icon;
-            return <Button key={`${item.kind}/${item.path}`} variant="ghost" color="var(--vt-text)" width="100%" height="auto" py={3} px={3} mb={1} justifyContent="flex-start" onClick={() => {
+            return <Button className="vt-resource-row" key={`${item.kind}/${item.path}`} variant="ghost" color="var(--vt-text)" width="100%" height="auto" py={3} px={3} mb={1} justifyContent="flex-start" onClick={() => {
                 if (item.kind === 'music' || item.kind === 'videos') {
                   setOpen(false);
                   window.dispatchEvent(new CustomEvent('vtuber-stage-action', { detail: { action: 'play', kind: item.kind, path: item.path } }));
+                } else if (item.kind === 'books') {
+                  setOpen(false);
+                  window.dispatchEvent(new CustomEvent('vt-read-book', { detail: { path: item.path, title: item.title } }));
                 } else setSelected(item);
               }}>
-              <Box p={3} bg="whiteAlpha.100" borderRadius="lg" color="#b8c2ff"><Icon /></Box>
+              <Box className="vt-resource-icon" p={2}><Icon /></Box>
               <Box textAlign="left" minW={0} flex={1}><Text truncate fontWeight="medium">{item.title}</Text><Text fontSize="xs" color="var(--vt-muted)" mt={1}>{category.label} · {(item.size / 1024 / 1024).toFixed(1)} MB</Text></Box>
             </Button>;
           })}

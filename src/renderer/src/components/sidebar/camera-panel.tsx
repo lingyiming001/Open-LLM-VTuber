@@ -89,6 +89,7 @@ function CameraPanel(): JSX.Element {
       >
         <Box
           {...sidebarStyles.cameraPanel.videoContainer}
+          className="vt-media-preview"
           onClick={toggleCamera}
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}

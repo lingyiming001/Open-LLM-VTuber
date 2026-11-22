@@ -17,7 +17,10 @@ export const DrawerContent = React.forwardRef<
   } = props;
   return (
     <Portal disabled={!portalled} container={portalRef}>
-      <ChakraDrawer.Positioner padding={offset}>
+      <ChakraDrawer.Positioner
+        padding={offset}
+        className={rest.className?.split(' ').includes('vt-inspector') ? 'vt-inspector-positioner' : undefined}
+      >
         <ChakraDrawer.Content ref={ref} {...rest} asChild={false}>
           {children}
         </ChakraDrawer.Content>

@@ -1,6 +1,7 @@
 /* eslint-disable global-require */
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-use-before-define */
+import { useContentModeStore } from '@/stores/content-mode-store';
 import { Subject } from 'rxjs';
 import type { ModelInfo } from '@/types/live2d';
 import type { ConfigFile, HistoryInfo } from '@/types/websocket';
@@ -27,6 +28,7 @@ export interface AudioPayload {
 }
 
 export interface Message {
+  duration_ms?: number;
   id: string;
   content: string;
   role: "ai" | "human";
@@ -48,6 +50,8 @@ export interface Actions {
 }
 
 export interface MessageEvent {
+  duration_ms?: number;
+  stage_action?: { action: string; kind?: string; path?: string };
   tool_id: any;
   tool_name: any;
   name: any;
@@ -185,6 +189,8 @@ class WebSocketService {
   }
 
   sendMessage(message: object) {
+    const type = (message as { type?: string }).type;
+    if (type === 'text-input' || type === 'mic-audio-end') useContentModeStore.getState().reset();
     if (this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(message));
     } else {

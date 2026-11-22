@@ -49,7 +49,7 @@ function GroupDrawer({ children }: GroupDrawerProps) {
     >
       <DrawerBackdrop />
       <DrawerTrigger asChild>{children}</DrawerTrigger>
-      <DrawerContent style={sidebarStyles.historyDrawer.drawer.content}>
+      <DrawerContent className="vt-inspector vt-inspector--group" style={sidebarStyles.historyDrawer.drawer.content}>
         <DrawerHeader>
           <DrawerTitle style={sidebarStyles.historyDrawer.drawer.title}>
             {t('group.management')}
@@ -60,10 +60,10 @@ function GroupDrawer({ children }: GroupDrawerProps) {
         </DrawerHeader>
 
         <DrawerBody>
-          <Box {...sidebarStyles.historyDrawer.listContainer}>
-            <Box {...sidebarStyles.groupDrawer.section}>
+          <Box className="vt-inspector-list" {...sidebarStyles.historyDrawer.listContainer}>
+            <Box className="vt-inspector-section" {...sidebarStyles.groupDrawer.section}>
               <Text {...sidebarStyles.groupDrawer.sectionTitle}>{t('group.yourUuid')}</Text>
-              <Box {...sidebarStyles.groupDrawer.memberItem}>
+              <Box className="vt-inspector-row" {...sidebarStyles.groupDrawer.memberItem}>
                 <Text {...sidebarStyles.groupDrawer.memberText}>{selfUid}</Text>
                 <ClipboardRoot value={selfUid}>
                   <ClipboardButton
@@ -74,7 +74,7 @@ function GroupDrawer({ children }: GroupDrawerProps) {
               </Box>
             </Box>
 
-            <Box {...sidebarStyles.groupDrawer.section}>
+            <Box className="vt-inspector-section" {...sidebarStyles.groupDrawer.section}>
               <Text {...sidebarStyles.groupDrawer.sectionTitle}>
                 {t('group.inviteMember')}
               </Text>
@@ -94,11 +94,11 @@ function GroupDrawer({ children }: GroupDrawerProps) {
               </Box>
             </Box>
 
-            <Box {...sidebarStyles.groupDrawer.section}>
+            <Box className="vt-inspector-section" {...sidebarStyles.groupDrawer.section}>
               <Text {...sidebarStyles.groupDrawer.sectionTitle}>{t('group.members')}</Text>
               <Box {...sidebarStyles.groupDrawer.memberList}>
                 {sortedGroupMembers.map((memberId) => (
-                  <Box key={memberId} {...sidebarStyles.groupDrawer.memberItem}>
+                  <Box className="vt-inspector-row" key={memberId} {...sidebarStyles.groupDrawer.memberItem}>
                     <Text {...sidebarStyles.groupDrawer.memberText}>
                       {memberId === selfUid ? `${memberId} (${t('group.you')})` : memberId}
                     </Text>

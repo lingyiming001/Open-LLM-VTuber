@@ -18,6 +18,7 @@ import { useConnectionStore } from '@/stores/connection-store';
 import { applyWebSocketStoreUpdate } from '@/services/websocket-protocol';
 import { useGroup } from '@/context/group-context';
 import { useInterrupt } from '@/hooks/utils/use-interrupt';
+import { getBookReadingEvent } from './book-reading-event';
 import { useBrowser } from '@/context/browser-context';
 
 function WebSocketHandler({ children }: { children: React.ReactNode }) {
@@ -166,7 +167,18 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
           });
         }
         break;
+      case 'history-cleared':
+        if (message.history_uid) {
+          setCurrentHistoryUid(message.history_uid);
+          setMessages([]);
+          setHistoryList(message.histories ?? []);
+          setSubtitleText('');
+        }
+        toaster.create({ title: message.message || '清空失败', type: message.success ? 'success' : 'error' });
+        window.dispatchEvent(new Event('vt-history-clear-finished'));
+        break;
       case 'history-deleted':
+        if (message.success) setHistoryList((items) => items.filter((item) => item.uid !== message.history_uid));
         toaster.create({
           title: message.success
             ? t('notification.historyDeleteSuccess')
@@ -178,8 +190,8 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
       case 'history-list':
         if (message.histories) {
           setHistoryList(message.histories);
-          if (message.histories.length > 0) {
-            setCurrentHistoryUid(message.histories[0].uid);
+          if (message.history_uid) {
+            setCurrentHistoryUid(message.history_uid);
           }
         }
         break;
@@ -232,7 +244,12 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
         // Handle forwarded interrupt
         interrupt(false); // do not send interrupt signal to server
         break;
-      case 'tool_call_status':
+      case 'tool_call_status': {
+        if (message.tool_name === 'local_stage' && message.status === 'completed' && message.stage_action) {
+          window.dispatchEvent(new CustomEvent('vtuber-stage-action', { detail: message.stage_action }));
+        }
+        const reading = getBookReadingEvent(message);
+        if (reading) window.dispatchEvent(new CustomEvent('vt-read-book', { detail: reading }));
         if (message.tool_id && message.tool_name && message.status) {
           // If there's browser view data included, store it in the browser context
           if (message.browser_view) {
@@ -246,6 +263,7 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
             role: 'ai',
             tool_id: message.tool_id,
             tool_name: message.tool_name,
+            duration_ms: message.duration_ms,
             name: message.name,
             status: message.status as ('running' | 'completed' | 'error'),
             content: message.content || '',
@@ -255,6 +273,7 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
           console.warn('Received incomplete tool_call_status message:', message);
         }
         break;
+      }
       default:
         console.warn('Unknown message type:', message.type);
     }

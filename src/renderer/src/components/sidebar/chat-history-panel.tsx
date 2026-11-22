@@ -6,8 +6,8 @@
 /* eslint-disable import/no-extraneous-dependencies */
 /* eslint-disable react/require-default-props */
 import React, { useEffect } from 'react';
-import { Box, Spinner, Flex, Text, Icon } from '@chakra-ui/react';
-import { sidebarStyles, chatPanelStyles } from './sidebar-styles';
+import { Box, Spinner, Text, Icon } from '@chakra-ui/react';
+import { chatPanelStyles } from './sidebar-styles';
 import { MainContainer, ChatContainer, MessageList as ChatMessageList, Message as ChatMessage, Avatar as ChatAvatar } from '@chatscope/chat-ui-kit-react';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import { useChatHistory } from '@/context/chat-history-context';
@@ -33,7 +33,8 @@ function ChatHistoryPanel(): JSX.Element {
 
   return (
     <Box
-      h="full"
+      flex="1"
+      minH={0}
       overflow="hidden"
       bg="gray.900"
     >
@@ -47,7 +48,7 @@ function ChatHistoryPanel(): JSX.Element {
                 alignItems="center"
                 justifyContent="center"
                 height="100%"
-                color="whiteAlpha.500"
+                color="var(--vt-muted)"
                 fontSize="sm"
               >
                 {t('sidebar.noMessages')}
@@ -57,42 +58,17 @@ function ChatHistoryPanel(): JSX.Element {
                 // Check if it's a tool call message
                 if (msg.type === 'tool_call_status') {
                   return (
-                    // Render Tool Call Indicator using msg properties
-                    <Flex
-                      key={msg.id} // Use tool_id as key
-                      {...sidebarStyles.toolCallIndicator.container}
-                      alignItems="center"
-                    >
-                      <Icon
-                        as={FaTools}
-                        {...sidebarStyles.toolCallIndicator.icon}
-                      />
-                      <Text {...sidebarStyles.toolCallIndicator.text}>
-                        {/* {msg.tool_name}: {msg.status === 'running' ? 'Running...' : msg.content} */}
-                        {msg.status === "running" ? `${msg.name} is using tool ${msg.tool_name}` : `${msg.name} used tool ${msg.tool_name}`}
+                    <Box as="details" key={msg.id} mx={3} my={1} p={2} borderRadius="md" bg="whiteAlpha.50">
+                      <Box as="summary" cursor="pointer" color="var(--vt-text)" fontSize="sm">
+                        <Icon as={msg.status === 'error' ? FaTimes : msg.status === 'completed' ? FaCheck : FaTools} mx={2} />
+                        {msg.tool_name} · {msg.status === 'running' ? '执行中' : msg.status === 'completed' ? '已完成' : '失败'}
+                        {msg.status === 'running' && <Spinner size="xs" ml={2} />}
+                        {typeof msg.duration_ms === 'number' && ` · ${msg.duration_ms} ms`}
+                      </Box>
+                      <Text as="pre" mt={2} px={2} maxH="14rem" overflow="auto" whiteSpace="pre-wrap" overflowWrap="anywhere" fontSize="xs" color="var(--vt-muted)">
+                        {msg.content ? msg.content.slice(0, 12000) + (msg.content.length > 12000 ? '\n…（结果已截断）' : '') : '没有返回内容'}
                       </Text>
-                      {/* Show spinner if running, checkmark if completed, maybe error icon? */}
-                      {msg.status === "running" && (
-                        <Spinner
-                          size="xs"
-                          color={sidebarStyles.toolCallIndicator.spinner.color}
-                          ml={sidebarStyles.toolCallIndicator.spinner.ml}
-                        />
-                      )}
-                      {msg.status === "completed" && (
-                        <Icon
-                          as={FaCheck}
-                          {...sidebarStyles.toolCallIndicator.completedIcon}
-                        />
-                      )}
-                      {/* Optional: Add an error icon */}
-                      {msg.status === "error" && (
-                        <Icon
-                          as={FaTimes}
-                          {...sidebarStyles.toolCallIndicator.errorIcon}
-                        />
-                      )}
-                    </Flex>
+                    </Box>
                   );
                 } 
                 // Render Standard Chat Message (human or ai text)

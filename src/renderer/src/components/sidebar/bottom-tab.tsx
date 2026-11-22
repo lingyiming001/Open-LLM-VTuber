@@ -7,16 +7,20 @@ import CameraPanel from './camera-panel'
 import ScreenPanel from './screen-panel'
 import BrowserPanel from './browser-panel'
 import MusicPanel from './music-panel'
-import VideoPanel from './video-panel'
+import VideoPreview from './video-preview'
+import CharacterDock from './character-dock'
+import { useContentModeStore } from '@/stores/content-mode-store'
 import { useEffect, useState } from 'react'
 
 function BottomTab(): JSX.Element {
   const { t } = useTranslation();
+  const { contentMode, readingEnabled, videoEnabled } = useContentModeStore();
+  const showCharacter = (contentMode === 'reading' && readingEnabled) || (contentMode === 'video' && videoEnabled);
   const [active, setActive] = useState('camera');
   useEffect(() => {
     const listener = (event: Event) => {
       const { action, kind } = (event as CustomEvent).detail;
-      if (action === 'play') setActive(kind === 'videos' ? 'video' : 'music');
+      if (action === 'play' && (kind === 'videos' || kind === 'music')) setActive(kind === 'videos' ? 'video' : 'music');
     };
     window.addEventListener('vtuber-stage-action', listener);
     return () => window.removeEventListener('vtuber-stage-action', listener);
@@ -26,9 +30,10 @@ function BottomTab(): JSX.Element {
     <Tabs.Root 
       value={active} onValueChange={(e) => setActive(e.value)} 
       variant="plain"
+      className="vt-media-panel"
       {...sidebarStyles.bottomTab.container}
     >
-      <Tabs.List {...sidebarStyles.bottomTab.list} overflowX="auto" css={{ scrollbarWidth: "thin", "& > button": { flexShrink: 0, paddingInline: "10px", fontSize: "13px" } }}>
+      <Tabs.List {...sidebarStyles.bottomTab.list} className="vt-media-tabs">
         <Tabs.Trigger value="camera" {...sidebarStyles.bottomTab.trigger}>
           <FiCamera />
           {t('sidebar.camera')}
@@ -46,18 +51,18 @@ function BottomTab(): JSX.Element {
       </Tabs.List>
 
       <Tabs.Content value="camera">
-        <CameraPanel />
+        {showCharacter && active === 'camera' ? <CharacterDock /> : <CameraPanel />}
       </Tabs.Content>
       
       <Tabs.Content value="screen">
-        <ScreenPanel />
+        {showCharacter && active === 'screen' ? <CharacterDock /> : <ScreenPanel />}
       </Tabs.Content>
       
       <Tabs.Content value="browser">
-        <BrowserPanel />
+        {showCharacter && active === 'browser' ? <CharacterDock /> : <BrowserPanel />}
       </Tabs.Content>
-      <Tabs.Content value="video"><VideoPanel /></Tabs.Content>
-      <Tabs.Content value="music"><MusicPanel /></Tabs.Content>
+      <Tabs.Content value="video">{showCharacter && active === 'video' ? <CharacterDock /> : <VideoPreview />}</Tabs.Content>
+      <Tabs.Content value="music">{showCharacter && active === 'music' ? <CharacterDock /> : <MusicPanel />}</Tabs.Content>
     </Tabs.Root>
   );
 }

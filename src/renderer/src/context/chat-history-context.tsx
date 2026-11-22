@@ -132,9 +132,10 @@ export function ChatHistoryProvider({ children }: { children: React.ReactNode })
         const existingMsg = updatedMessages[existingMessageIndex];
         updatedMessages[existingMessageIndex] = {
           ...existingMsg,
+          duration_ms: toolMessageData.duration_ms,
           status: toolMessageData.status, // Update status
           name: toolMessageData.name || existingMsg.name,
-          content: toolMessageData.content || existingMsg.content, // Update content (result/error or keep input)
+          content: toolMessageData.content ?? existingMsg.content, // Update content (result/error or keep input)
           timestamp: toolMessageData.timestamp!, // Update timestamp
         };
         return updatedMessages;
@@ -147,6 +148,7 @@ export function ChatHistoryProvider({ children }: { children: React.ReactNode })
           name: toolMessageData.name || '',
           tool_id: toolMessageData.tool_id,
           tool_name: toolMessageData.tool_name,
+          duration_ms: toolMessageData.duration_ms,
           status: toolMessageData.status,
           content: toolMessageData.content || '', // Initial content (input)
           timestamp: toolMessageData.timestamp!,

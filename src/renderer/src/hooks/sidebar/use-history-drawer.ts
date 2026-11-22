@@ -11,11 +11,10 @@ export const useHistoryDrawer = () => {
     historyList,
     currentHistoryUid,
     setCurrentHistoryUid,
-    setHistoryList,
     messages,
     updateHistoryList,
   } = useChatHistory();
-  const { sendMessage } = useWebSocket();
+  const { sendMessage, wsState } = useWebSocket();
 
   const fetchAndSetHistory = (uid: string) => {
     if (!uid || uid === currentHistoryUid) return;
@@ -46,7 +45,7 @@ export const useHistoryDrawer = () => {
       type: 'delete-history',
       history_uid: uid,
     });
-    setHistoryList(historyList.filter((history) => history.uid !== uid));
+
   };
 
   const getLatestMessageContent = (history: HistoryInfo) => {
@@ -71,5 +70,7 @@ export const useHistoryDrawer = () => {
     fetchAndSetHistory,
     deleteHistory,
     getLatestMessageContent,
+    canClear: wsState === "OPEN",
+    clearHistory: () => sendMessage({ type: "clear-history" }),
   };
 };

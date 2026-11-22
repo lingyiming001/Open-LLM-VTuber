@@ -23,6 +23,7 @@ import TTS from './tts';
 import Agent from './agent';
 import About from './about';
 import Appearance from './appearance';
+import ContentModeSettings from './content-mode';
 
 interface SettingUIProps {
   open: boolean;
@@ -63,6 +64,7 @@ function SettingUI({ open, onClose }: SettingUIProps): JSX.Element {
   const tabsContent = useMemo(
     () => (
       <Tabs.ContentGroup>
+        <Tabs.Content value="content-mode" {...settingStyles.settingUI.tabs.content}><ContentModeSettings /></Tabs.Content>
         <Tabs.Content value="general" {...settingStyles.settingUI.tabs.content}>
           <General
             onSave={handleSaveCallback}
@@ -103,7 +105,7 @@ function SettingUI({ open, onClose }: SettingUIProps): JSX.Element {
       placement="start"
     >
       <DrawerBackdrop />
-      <DrawerContent {...settingStyles.settingUI.drawerContent} maxWidth="440px">
+      <DrawerContent className="vt-inspector vt-inspector--settings" {...settingStyles.settingUI.drawerContent} maxWidth="440px">
         <DrawerHeader {...settingStyles.settingUI.drawerHeader}>
           <DrawerTitle {...settingStyles.settingUI.drawerTitle}>
             {t('common.settings')}
@@ -129,6 +131,7 @@ function SettingUI({ open, onClose }: SettingUIProps): JSX.Element {
               >
                 {t('settings.tabs.general')}
               </Tabs.Trigger>
+              <Tabs.Trigger value="content-mode" {...settingStyles.settingUI.tabs.trigger}>阅读与视频</Tabs.Trigger>
               <Tabs.Trigger value="appearance" {...settingStyles.settingUI.tabs.trigger}>主题</Tabs.Trigger>
               <Tabs.Trigger
                 value="live2d"
