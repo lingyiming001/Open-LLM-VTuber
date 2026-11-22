@@ -1,6 +1,7 @@
 import { defineConfig, normalizePath } from 'vite';
 import path from 'path';
 import react from '@vitejs/plugin-react-swc';
+import { rendererChunk } from './build/chunks';
 
 const createConfig = async (outDir: string) => ({
   plugins: [
@@ -32,6 +33,8 @@ const createConfig = async (outDir: string) => ({
   ],
   resolve: {
     alias: {
+      // VAD uses WASM inference; exclude the unused WebGL/protobuf runtime (and its eval).
+      "onnxruntime-web": path.resolve(__dirname, "node_modules/onnxruntime-web/dist/ort.wasm.min.js"),
       "@": path.resolve(__dirname, "./src/renderer/src"),
       "@framework": path.resolve(__dirname, "./src/renderer/WebSDK/Framework/src"),
       "@cubismsdksamples": path.resolve(__dirname, "./src/renderer/WebSDK/src"),
@@ -55,6 +58,9 @@ const createConfig = async (outDir: string) => ({
     emptyOutDir: true,
     assetsDir: "assets",
     rollupOptions: {
+      output: {
+        manualChunks: rendererChunk,
+      },
       input: {
         main: path.join(__dirname, "src/renderer/index.html"),
       },

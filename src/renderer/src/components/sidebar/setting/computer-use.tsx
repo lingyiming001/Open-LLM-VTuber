@@ -76,7 +76,7 @@ export default function ComputerUse() {
     <Text mt={2} mb={6} fontSize="14px" lineHeight="1.7" color="var(--vt-muted)">管理角色如何使用你的电脑与浏览器。开关立即生效，无需保存。</Text>
     <Box display="flex" justifyContent="space-between" alignItems="center" gap={2} mb={3}>
       <Text fontSize="13px" fontWeight="600">控制能力</Text>
-      <Button size="xs" variant="ghost" disabled={busy} onClick={() => { setError(''); void refresh().catch((e) => setError(e.message)); }}><FiRefreshCw />刷新状态</Button>
+      <Button size="xs" variant="ghost" color="var(--vt-text)" disabled={busy} onClick={() => { setError(''); void refresh().catch((e) => setError(e.message)); }}><FiRefreshCw />刷新状态</Button>
     </Box>
     {error && <Box role="alert" mb={4} p={3} borderRadius="lg" bg="var(--vt-raised)" color="red.400" fontSize="13px" overflowWrap="anywhere">{error}</Box>}
     {!state && !error && <Text role="status" color="var(--vt-muted)" py={6}>正在读取能力状态…</Text>}
@@ -90,17 +90,17 @@ export default function ComputerUse() {
         </Row>
       </Box>
       <Box display="flex" gap={2} flexWrap="wrap" mt={3} mb={6}>
-        <Button size="xs" variant="outline" disabled={busy || !state.settings.computer} onClick={() => action('/probe/computer')}>测试截屏</Button>
-        <Button size="xs" variant="outline" disabled={busy || !state.settings.browser} onClick={() => action('/probe/browser')}>{state.browserRunning ? '检查浏览器' : '打开专用浏览器'}</Button>
+        <Button size="xs" variant="outline" color="var(--vt-text)" borderColor="var(--vt-border)" disabled={busy || !state.settings.computer} onClick={() => action('/probe/computer')}>测试截屏</Button>
+        <Button size="xs" variant="outline" color="var(--vt-text)" borderColor="var(--vt-border)" disabled={busy || !state.settings.browser} onClick={() => action('/probe/browser')}>{state.browserRunning ? '检查浏览器' : '打开专用浏览器'}</Button>
         <Text alignSelf="center" fontSize="12px" color="var(--vt-muted)">{state.browserRunning ? '浏览器会话运行中' : '浏览器未启动'}</Text>
       </Box>
       <Text fontSize="13px" fontWeight="600" mb={3}>系统权限</Text>
       <Box className="control-card">
         <Row icon={<FiMonitor />} title="屏幕录制" description={state.permissions.screen ? '已授权 · 可观察屏幕内容' : '未授权 · 需为启动后端的应用开启权限'}>
-          <Button size="xs" variant="ghost" disabled={busy || !state.permissions.supported} onClick={() => action('/permissions/screen')}>管理<FiArrowUpRight /></Button>
+          <Button size="xs" variant="ghost" color="var(--vt-text)" disabled={busy || !state.permissions.supported} onClick={() => action('/permissions/screen')}>管理<FiArrowUpRight /></Button>
         </Row>
         <Row icon={<FiShield />} title="辅助功能" description={state.permissions.accessibility ? '已授权 · 可操作鼠标与键盘' : '未授权 · 需在 macOS 系统设置中开启'}>
-          <Button size="xs" variant="ghost" disabled={busy || !state.permissions.supported} onClick={() => action('/permissions/accessibility')}>管理<FiArrowUpRight /></Button>
+          <Button size="xs" variant="ghost" color="var(--vt-text)" disabled={busy || !state.permissions.supported} onClick={() => action('/permissions/accessibility')}>管理<FiArrowUpRight /></Button>
         </Row>
       </Box>
       <Box className="control-card" mt={3}>

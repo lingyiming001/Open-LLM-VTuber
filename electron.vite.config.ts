@@ -3,6 +3,7 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 import { viteStaticCopy } from 'vite-plugin-static-copy'
 import { normalizePath } from 'vite';
+import { rendererChunk } from './build/chunks';
 
 export default defineConfig({
   main: {
@@ -14,6 +15,7 @@ export default defineConfig({
   renderer: {
     resolve: {
       alias: {
+        'onnxruntime-web': resolve(__dirname, 'node_modules/onnxruntime-web/dist/ort.wasm.min.js'),
         '@': resolve('src/renderer/src'),
         "@framework": resolve("src/renderer/WebSDK/Framework/src"),
         "@cubismsdksamples": resolve("src/renderer/WebSDK/src"),
@@ -53,12 +55,7 @@ export default defineConfig({
     ],
     build: {
       rollupOptions: {
-        onwarn(warning, warn) {
-          if (warning.message.includes('onnxruntime')) {
-            return;
-          }
-          warn(warning);
-        },
+        output: { manualChunks: rendererChunk },
       },
     },
   },

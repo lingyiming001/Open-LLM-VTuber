@@ -1,40 +1,35 @@
 /* eslint-disable no-sparse-arrays */
 /* eslint-disable react-hooks/exhaustive-deps */
 // eslint-disable-next-line object-curly-newline
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { wsService, MessageEvent } from '@/services/websocket-service';
-import {
-  WebSocketContext, HistoryInfo, defaultWsUrl, defaultBaseUrl,
-} from '@/context/websocket-context';
-import { ModelInfo, useLive2DConfig } from '@/context/live2d-config-context';
+import type { HistoryInfo } from '@/types/websocket';
 import { useSubtitle } from '@/context/subtitle-context';
 import { audioTaskQueue } from '@/utils/task-queue';
-import { useAudioTask } from '@/components/canvas/live2d';
+import { useAudioTask } from '@/hooks/utils/use-audio-task';
 import { useBgUrl } from '@/context/bgurl-context';
 import { useConfig } from '@/context/character-config-context';
 import { useChatHistory } from '@/context/chat-history-context';
 import { toaster } from '@/components/ui/toaster';
 import { useVAD } from '@/context/vad-context';
 import { AiState, useAiState } from "@/context/ai-state-context";
-import { useLocalStorage } from '@/hooks/utils/use-local-storage';
+import { useConnectionStore } from '@/stores/connection-store';
+import { applyWebSocketStoreUpdate } from '@/services/websocket-protocol';
 import { useGroup } from '@/context/group-context';
 import { useInterrupt } from '@/hooks/utils/use-interrupt';
 import { useBrowser } from '@/context/browser-context';
 
 function WebSocketHandler({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
-  const [wsState, setWsState] = useState<string>('CLOSED');
-  const [wsUrl, setWsUrl] = useLocalStorage<string>('wsUrl', defaultWsUrl);
-  const [baseUrl, setBaseUrl] = useLocalStorage<string>('baseUrl', defaultBaseUrl);
-  const { aiState, setAiState, backendSynthComplete, setBackendSynthComplete } = useAiState();
-  const { setModelInfo } = useLive2DConfig();
+  const wsUrl = useConnectionStore((state) => state.wsUrl);
+  const setWsState = useConnectionStore((state) => state.setWsState);
+  const { aiState, setAiState } = useAiState();
   const { setSubtitleText } = useSubtitle();
   const { clearResponse, setForceNewMessage, appendHumanMessage, appendOrUpdateToolCallMessage } = useChatHistory();
   const { addAudioTask } = useAudioTask();
   const bgUrlContext = useBgUrl();
-  const { confUid, setConfName, setConfUid, setConfigFiles } = useConfig();
-  const [pendingModelInfo, setPendingModelInfo] = useState<ModelInfo | undefined>(undefined);
+  const { setConfigFiles } = useConfig();
   const { setSelfUid, setGroupMembers, setIsOwner } = useGroup();
   const { startMic, stopMic, autoStartMicOnConvEnd } = useVAD();
   const autoStartMicOnConvEndRef = useRef(autoStartMicOnConvEnd);
@@ -44,13 +39,6 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     autoStartMicOnConvEndRef.current = autoStartMicOnConvEnd;
   }, [autoStartMicOnConvEnd]);
-
-  useEffect(() => {
-    if (pendingModelInfo && confUid) {
-      setModelInfo(pendingModelInfo);
-      setPendingModelInfo(undefined);
-    }
-  }, [pendingModelInfo, setModelInfo, confUid]);
 
   const {
     setCurrentHistoryUid, setMessages, setHistoryList,
@@ -101,31 +89,12 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
         break;
       case 'set-model-and-conf':
         setAiState('loading');
-        if (message.conf_name) {
-          setConfName(message.conf_name);
-        }
-        if (message.conf_uid) {
-          setConfUid(message.conf_uid);
-          console.log('confUid', message.conf_uid);
-        }
-        if (message.client_uid) {
-          setSelfUid(message.client_uid);
-        }
-        setPendingModelInfo(message.model_info);
-        // setModelInfo(message.model_info);
-        // We don't know when the confRef in live2d-config-context will be updated, so we set a delay here for convenience
-        if (message.model_info && !message.model_info.url.startsWith("http")) {
-          const modelUrl = baseUrl + message.model_info.url;
-          // eslint-disable-next-line no-param-reassign
-          message.model_info.url = modelUrl;
-        }
-
+        applyWebSocketStoreUpdate(message);
+        if (message.client_uid) setSelfUid(message.client_uid);
         setAiState('idle');
         break;
       case 'full-text':
-        if (message.text) {
-          setSubtitleText(message.text);
-        }
+        applyWebSocketStoreUpdate(message);
         break;
       case 'config-files':
         if (message.configs) {
@@ -244,7 +213,7 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
         });
         break;
       case 'backend-synth-complete':
-        setBackendSynthComplete(true);
+        applyWebSocketStoreUpdate(message);
         break;
       case 'conversation-chain-end':
         if (!audioTaskQueue.hasTask()) {
@@ -289,7 +258,7 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
       default:
         console.warn('Unknown message type:', message.type);
     }
-  }, [aiState, addAudioTask, appendHumanMessage, baseUrl, bgUrlContext, setAiState, setConfName, setConfUid, setConfigFiles, setCurrentHistoryUid, setHistoryList, setMessages, setModelInfo, setSubtitleText, startMic, stopMic, setSelfUid, setGroupMembers, setIsOwner, backendSynthComplete, setBackendSynthComplete, clearResponse, handleControlMessage, appendOrUpdateToolCallMessage, interrupt, setBrowserViewData, t]);
+  }, [aiState, addAudioTask, appendHumanMessage, bgUrlContext, setAiState, setConfigFiles, setCurrentHistoryUid, setHistoryList, setMessages, setSubtitleText, startMic, stopMic, setSelfUid, setGroupMembers, setIsOwner, clearResponse, handleControlMessage, appendOrUpdateToolCallMessage, interrupt, setBrowserViewData, t]);
 
   useEffect(() => {
     wsService.connect(wsUrl);
@@ -304,21 +273,7 @@ function WebSocketHandler({ children }: { children: React.ReactNode }) {
     };
   }, [wsUrl, handleWebSocketMessage]);
 
-  const webSocketContextValue = useMemo(() => ({
-    sendMessage: wsService.sendMessage.bind(wsService),
-    wsState,
-    reconnect: () => wsService.connect(wsUrl),
-    wsUrl,
-    setWsUrl,
-    baseUrl,
-    setBaseUrl,
-  }), [wsState, wsUrl, baseUrl]);
-
-  return (
-    <WebSocketContext.Provider value={webSocketContextValue}>
-      {children}
-    </WebSocketContext.Provider>
-  );
+  return <>{children}</>;
 }
 
 export default WebSocketHandler;

@@ -2,9 +2,8 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 /* eslint-disable no-use-before-define */
 import { Subject } from 'rxjs';
-import { ModelInfo } from '@/context/live2d-config-context';
-import { HistoryInfo } from '@/context/websocket-context';
-import { ConfigFile } from '@/context/character-config-context';
+import type { ModelInfo } from '@/types/live2d';
+import type { ConfigFile, HistoryInfo } from '@/types/websocket';
 import { toaster } from '@/components/ui/toaster';
 
 export interface DisplayText {

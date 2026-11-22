@@ -23,7 +23,6 @@ import TTS from './tts';
 import Agent from './agent';
 import About from './about';
 import Appearance from './appearance';
-import ComputerUse from './computer-use';
 
 interface SettingUIProps {
   open: boolean;
@@ -64,7 +63,6 @@ function SettingUI({ open, onClose }: SettingUIProps): JSX.Element {
   const tabsContent = useMemo(
     () => (
       <Tabs.ContentGroup>
-        <Tabs.Content value="control" {...settingStyles.settingUI.tabs.content}>{open && activeTab === "control" && <ComputerUse />}</Tabs.Content>
         <Tabs.Content value="general" {...settingStyles.settingUI.tabs.content}>
           <General
             onSave={handleSaveCallback}
@@ -105,7 +103,7 @@ function SettingUI({ open, onClose }: SettingUIProps): JSX.Element {
       placement="start"
     >
       <DrawerBackdrop />
-      <DrawerContent {...settingStyles.settingUI.drawerContent} maxWidth={activeTab === "control" ? "720px" : "440px"}>
+      <DrawerContent {...settingStyles.settingUI.drawerContent} maxWidth="440px">
         <DrawerHeader {...settingStyles.settingUI.drawerHeader}>
           <DrawerTitle {...settingStyles.settingUI.drawerTitle}>
             {t('common.settings')}
@@ -125,7 +123,6 @@ function SettingUI({ open, onClose }: SettingUIProps): JSX.Element {
             {...settingStyles.settingUI.tabs.root}
           >
             <Tabs.List {...settingStyles.settingUI.tabs.list} flexWrap="wrap">
-              <Tabs.Trigger value="control" {...settingStyles.settingUI.tabs.trigger}>电脑与浏览器</Tabs.Trigger>
               <Tabs.Trigger
                 value="general"
                 {...settingStyles.settingUI.tabs.trigger}

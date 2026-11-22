@@ -1,22 +1,17 @@
 /* eslint-disable no-shadow */
 // import { StrictMode } from 'react';
 import { Box, Flex, ChakraProvider, defaultSystem } from "@chakra-ui/react";
-import { useState, useEffect, useRef } from "react";
+import { lazy, Suspense, useState, useEffect, useRef } from "react";
 // import Canvas from './components/canvas/canvas'; // Likely unused now
 import Sidebar from "./components/sidebar/sidebar";
 import Footer from "./components/footer/footer";
-import { AiStateProvider } from "./context/ai-state-context";
-import { Live2DConfigProvider } from "./context/live2d-config-context";
-import { SubtitleProvider } from "./context/subtitle-context";
 import { BgUrlProvider } from "./context/bgurl-context";
 import { layoutStyles } from "./layout";
 import WebSocketHandler from "./services/websocket-handler";
 import { CameraProvider } from "./context/camera-context";
 import { ChatHistoryProvider } from "./context/chat-history-context";
-import { CharacterConfigProvider } from "./context/character-config-context";
 import { Toaster } from "./components/ui/toaster";
 import { VADProvider } from "./context/vad-context";
-import { Live2D } from "./components/canvas/live2d";
 import TitleBar from "./components/electron/title-bar";
 import { InputSubtitle } from "./components/electron/input-subtitle";
 import { ProactiveSpeakProvider } from "./context/proactive-speak-context";
@@ -29,6 +24,11 @@ import Background from "./components/canvas/background";
 import WebSocketStatus from "./components/canvas/ws-status";
 import Subtitle from "./components/canvas/subtitle";
 import { ModeProvider, useMode } from "./context/mode-context";
+
+const Live2D = lazy(async () => {
+  const module = await import("./components/canvas/live2d");
+  return { default: module.Live2D };
+});
 
 function AppContent(): JSX.Element {
   const [showSidebar, setShowSidebar] = useState(true);
@@ -101,7 +101,9 @@ function AppContent(): JSX.Element {
           ? getResponsiveLive2DWindowStyle(showSidebar)
           : live2dPetStyle)}
       >
-        <Live2D />
+        <Suspense fallback={null}>
+          <Live2D />
+        </Suspense>
       </Box>
 
       {/* Conditional Rendering of Window UI */}
@@ -172,30 +174,22 @@ function AppWithGlobalStyles(): JSX.Element {
     <>
       <CameraProvider>
         <ScreenCaptureProvider>
-          <CharacterConfigProvider>
-            <ChatHistoryProvider>
-              <AiStateProvider>
-                <ProactiveSpeakProvider>
-                  <Live2DConfigProvider>
-                    <SubtitleProvider>
-                      <VADProvider>
-                        <BgUrlProvider>
-                          <GroupProvider>
-                            <BrowserProvider>
-                              <WebSocketHandler>
-                                <Toaster />
-                                <AppContent />
-                              </WebSocketHandler>
-                            </BrowserProvider>
-                          </GroupProvider>
-                        </BgUrlProvider>
-                      </VADProvider>
-                    </SubtitleProvider>
-                  </Live2DConfigProvider>
-                </ProactiveSpeakProvider>
-              </AiStateProvider>
-            </ChatHistoryProvider>
-          </CharacterConfigProvider>
+          <ChatHistoryProvider>
+            <ProactiveSpeakProvider>
+              <VADProvider>
+                <BgUrlProvider>
+                  <GroupProvider>
+                    <BrowserProvider>
+                      <WebSocketHandler>
+                        <Toaster />
+                        <AppContent />
+                      </WebSocketHandler>
+                    </BrowserProvider>
+                  </GroupProvider>
+                </BgUrlProvider>
+              </VADProvider>
+            </ProactiveSpeakProvider>
+          </ChatHistoryProvider>
         </ScreenCaptureProvider>
       </CameraProvider>
     </>

@@ -3,12 +3,12 @@ import {
   createContext, useContext, useRef, useCallback, useEffect, useReducer, useMemo,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MicVAD } from '@ricky0123/vad-web';
-import { useInterrupt } from '@/components/canvas/live2d';
+import type { MicVAD } from '@ricky0123/vad-web';
+import { useInterrupt } from '@/hooks/utils/use-interrupt';
 import { audioTaskQueue } from '@/utils/task-queue';
 import { useSendAudio } from '@/hooks/utils/use-send-audio';
-import { SubtitleContext } from './subtitle-context';
-import { AiStateContext, AiState } from './ai-state-context';
+import { useSubtitle } from './subtitle-context';
+import { AiState, useAiState } from './ai-state-context';
 import { useLocalStorage } from '@/hooks/utils/use-local-storage';
 import { toaster } from '@/components/ui/toaster';
 
@@ -138,8 +138,8 @@ export function VADProvider({ children }: { children: React.ReactNode }) {
   // External hooks and contexts
   const { interrupt } = useInterrupt();
   const { sendAudioPartition } = useSendAudio();
-  const { setSubtitleText } = useContext(SubtitleContext)!;
-  const { aiState, setAiState } = useContext(AiStateContext)!;
+  const { setSubtitleText } = useSubtitle();
+  const { aiState, setAiState } = useAiState();
 
   // Refs for callback stability
   const interruptRef = useRef(interrupt);
@@ -276,7 +276,8 @@ export function VADProvider({ children }: { children: React.ReactNode }) {
    * Initialize new VAD instance
    */
   const initVAD = async () => {
-    const newVAD = await MicVAD.new({
+    const { MicVAD: MicVADRuntime } = await import('@ricky0123/vad-web');
+    const newVAD = await MicVADRuntime.new({
       model: "v5",
       preSpeechPadFrames: 20,
       positiveSpeechThreshold: settings.positiveSpeechThreshold / 100,

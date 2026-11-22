@@ -6,14 +6,6 @@ import App from './App';
 import { LAppAdapter } from '../WebSDK/src/lappadapter';
 import './i18n';
 
-const originalConsoleWarn = console.warn;
-console.warn = (...args) => {
-  if (typeof args[0] === 'string' && args[0].includes('onnxruntime')) {
-    return;
-  }
-  originalConsoleWarn.apply(console, args);
-};
-
 // Suppress specific console.error messages from @chatscope/chat-ui-kit-react
 const originalConsoleError = console.error;
 const errorMessagesToIgnore = ["Warning: Failed"];

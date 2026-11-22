@@ -1,73 +1,39 @@
-/* eslint-disable react/jsx-no-constructed-context-values */
-import React, { useContext, useCallback } from 'react';
+import { ReactNode, useCallback } from 'react';
 import { wsService } from '@/services/websocket-service';
-import { useLocalStorage } from '@/hooks/utils/use-local-storage';
+import {
+  DEFAULT_BASE_URL,
+  DEFAULT_WS_URL,
+  useConnectionStore,
+} from '@/stores/connection-store';
+import { HistoryInfo } from '@/types/websocket';
 
-const DEFAULT_WS_URL = 'ws://127.0.0.1:12393/client-ws';
-const DEFAULT_BASE_URL = 'http://127.0.0.1:12393';
-
-export interface HistoryInfo {
-  uid: string;
-  latest_message: {
-    role: 'human' | 'ai';
-    timestamp: string;
-    content: string;
-  } | null;
-  timestamp: string | null;
-}
-
-interface WebSocketContextProps {
-  sendMessage: (message: object) => void;
-  wsState: string;
-  reconnect: () => void;
-  wsUrl: string;
-  setWsUrl: (url: string) => void;
-  baseUrl: string;
-  setBaseUrl: (url: string) => void;
-}
-
-export const WebSocketContext = React.createContext<WebSocketContextProps>({
-  sendMessage: wsService.sendMessage.bind(wsService),
-  wsState: 'CLOSED',
-  reconnect: () => wsService.connect(DEFAULT_WS_URL),
-  wsUrl: DEFAULT_WS_URL,
-  setWsUrl: () => {},
-  baseUrl: DEFAULT_BASE_URL,
-  setBaseUrl: () => {},
-});
-
-export function useWebSocket() {
-  const context = useContext(WebSocketContext);
-  if (!context) {
-    throw new Error('useWebSocket must be used within a WebSocketProvider');
-  }
-  return context;
-}
+export type { HistoryInfo };
 
 export const defaultWsUrl = DEFAULT_WS_URL;
 export const defaultBaseUrl = DEFAULT_BASE_URL;
 
-export function WebSocketProvider({ children }: { children: React.ReactNode }) {
-  const [wsUrl, setWsUrl] = useLocalStorage('wsUrl', DEFAULT_WS_URL);
-  const [baseUrl, setBaseUrl] = useLocalStorage('baseUrl', DEFAULT_BASE_URL);
-  const handleSetWsUrl = useCallback((url: string) => {
-    setWsUrl(url);
-    wsService.connect(url);
-  }, [setWsUrl]);
+/** Compatibility wrapper while callers migrate to useConnectionStore directly. */
+export function WebSocketProvider({ children }: { children: ReactNode }) {
+  return <>{children}</>;
+}
 
-  const value = {
+export function useWebSocket() {
+  const wsUrl = useConnectionStore((state) => state.wsUrl);
+  const baseUrl = useConnectionStore((state) => state.baseUrl);
+  const wsState = useConnectionStore((state) => state.wsState);
+  const setWsUrlInStore = useConnectionStore((state) => state.setWsUrl);
+  const setBaseUrl = useConnectionStore((state) => state.setBaseUrl);
+  const setWsUrl = useCallback((url: string) => {
+    setWsUrlInStore(url);
+    wsService.connect(url);
+  }, [setWsUrlInStore]);
+  return {
     sendMessage: wsService.sendMessage.bind(wsService),
-    wsState: 'CLOSED',
+    wsState,
     reconnect: () => wsService.connect(wsUrl),
     wsUrl,
-    setWsUrl: handleSetWsUrl,
+    setWsUrl,
     baseUrl,
     setBaseUrl,
   };
-
-  return (
-    <WebSocketContext.Provider value={value}>
-      {children}
-    </WebSocketContext.Provider>
-  );
 }

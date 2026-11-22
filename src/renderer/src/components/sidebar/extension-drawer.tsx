@@ -3,6 +3,7 @@ import { Box, Button, Input, Text, Textarea } from '@chakra-ui/react';
 import { FiGrid, FiUpload, FiPlus, FiPackage } from 'react-icons/fi';
 import { useWebSocket } from '@/context/websocket-context';
 import { DrawerRoot, DrawerTrigger, DrawerBackdrop, DrawerContent, DrawerHeader, DrawerTitle, DrawerBody, DrawerCloseTrigger } from '@/components/ui/drawer';
+import ComputerUse from './setting/computer-use';
 
 type Extension = { id: string; name: string; description: string; kind: string; enabled: boolean; skills: { name: string }[]; servers: string[] };
 const template = '{\n  "command": "uvx",\n  "args": ["mcp-server-time"],\n  "env": {}\n}';
@@ -43,7 +44,7 @@ export default function ExtensionDrawer() {
   return <DrawerRoot open={open} onOpenChange={(e) => setOpen(e.open)} placement="start">
     <DrawerTrigger asChild><Button aria-label="扩展" title="扩展"><FiGrid /></Button></DrawerTrigger>
     <DrawerBackdrop />
-    <DrawerContent className="vt-feature-drawer" bg="var(--vt-surface)" color="var(--vt-text)">
+    <DrawerContent className="vt-feature-drawer" bg="var(--vt-surface)" color="var(--vt-text)" maxWidth="720px">
       <DrawerHeader display="block" position="relative" pr={14}><DrawerTitle>扩展</DrawerTitle><Text mt={2} fontSize="sm" color="var(--vt-muted)">为角色添加技能与外部工具</Text><DrawerCloseTrigger /></DrawerHeader>
       <DrawerBody>
         <Box display="flex" gap={2} mb={4} flexWrap="wrap">
@@ -59,6 +60,9 @@ export default function ExtensionDrawer() {
         </Box>}
         <details style={{ marginBottom: 20, color: 'var(--vt-muted)', fontSize: 13 }}><summary>插件包格式</summary><Text mt={2}>ZIP 内放置 plugin.json 和可选的 skills/技能名/SKILL.md。插件组合技能说明与 MCP 工具，不运行安装脚本。Skill 的附属脚本和参考文件暂不加载。</Text><pre style={{ whiteSpace: 'pre-wrap', marginTop: 10 }}>{'{\n  "id": "my-plugin",\n  "name": "我的插件",\n  "description": "插件说明",\n  "mcpServers": {\n    "my-time": {\n      "command": "uvx",\n      "args": ["mcp-server-time"]\n    }\n  }\n}'}</pre></details>
         <Text role="status" color="var(--vt-accent)" fontSize="sm" mb={3}>{busy ? '正在处理…' : message}</Text>
+        <Box borderTop="1px solid var(--vt-border)" mt={7} pt={7}>
+          <ComputerUse />
+        </Box>
         {error && <Box role="alert" color="red.400" fontSize="sm" mb={3}>{error}<Button size="xs" ml={2} onClick={() => refresh().then(() => setError('')).catch((e) => setError(e.message))}>重试</Button></Box>}
         <Box display="flex" gap={2} mb={4}>{[['all', '全部'], ['plugin', '插件'], ['skill', 'Skills'], ['mcp', 'MCP']].map(([value, label]) => <Button key={value} size="sm" aria-pressed={filter === value} onClick={() => setFilter(value)} bg={filter === value ? 'var(--vt-accent)' : 'var(--vt-raised)'} color={filter === value ? 'white' : 'var(--vt-text)'}>{label}</Button>)}</Box>
         {items.filter((item) => filter === 'all' || item.kind === filter).map((item) => <Box key={item.id} border="1px solid var(--vt-border)" p={4} borderRadius="lg" mb={3}>

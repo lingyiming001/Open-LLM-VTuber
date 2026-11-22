@@ -1,5 +1,5 @@
-:root, :root[data-vt-theme="dark"] { --vt-surface:#18181b; --vt-raised:#25252a; --vt-text:#f0f0f3; --vt-muted:#a1a1ad; --vt-border:#393940; --vt-accent:#6366f1; }
-:root[data-vt-theme="light"] { --vt-surface:#fafafa; --vt-raised:#eeeeF2; --vt-text:#25252d; --vt-muted:#646473; --vt-border:#d4d4de; }
+:root, :root[data-vt-theme="dark"] { --vt-surface:#1b1d22; --vt-raised:#25282f; --vt-text:#e8ebf1; --vt-muted:#959dab; --vt-border:#353a44; --vt-accent:#6366f1; --vt-hover:#303540; --vt-shadow:0 12px 32px #0005; --vt-disabled-surface:#2e333d; --vt-disabled-text:#adb5c2; --vt-disabled-border:#59616d; }
+:root[data-vt-theme="light"] { --vt-surface:#fafbfc; --vt-raised:#f0f2f5; --vt-text:#242934; --vt-muted:#727b8a; --vt-border:#dfe3e9; --vt-hover:#e9edf3; --vt-shadow:0 12px 32px #18243b18,0 2px 6px #18243b0a; --vt-disabled-surface:#e3e7ed; --vt-disabled-text:#4c596b; --vt-disabled-border:#aab4c1; }
 html[data-vt-theme] .vt-sidebar, html[data-vt-theme] .chakra-drawer__content, html[data-vt-theme] .chakra-menu__content, html[data-vt-theme] .chakra-select__content, html[data-vt-theme] .chakra-popover__content { background:var(--vt-surface)!important; color:var(--vt-text)!important; border-color:var(--vt-border)!important; }
 html[data-vt-theme] .chakra-drawer__header, html[data-vt-theme] .chakra-drawer__footer { border-color:var(--vt-border)!important; }
 html[data-vt-theme] .chakra-drawer__title, html[data-vt-theme] .chakra-drawer__content .chakra-field__label { color:var(--vt-text)!important; }
@@ -12,6 +12,7 @@ html[data-vt-theme] .chakra-drawer__content .chakra-switch__control[data-state=c
 html[data-vt-theme] .chakra-drawer__footer button:first-child { color:var(--vt-text)!important; border-color:var(--vt-border)!important; }
 html[data-vt-theme] .vt-feature-drawer .chakra-drawer__header { display:block!important; position:relative; padding-right:60px!important; }
 html[data-vt-theme] .vt-feature-drawer .chakra-drawer__closeTrigger { width:32px!important; min-width:32px!important; max-width:32px!important; color:var(--vt-text)!important; }
+html[data-vt-theme] .vt-feature-drawer { background:var(--vt-surface)!important; color:var(--vt-text)!important; opacity:1!important; backdrop-filter:none!important; }
 html[data-vt-theme] .vt-sidebar button:not(.chakra-drawer__content button) { color:var(--vt-text); }
 html[data-vt-theme="light"] .vt-sidebar [role=tabpanel], html[data-vt-theme="light"] .vt-sidebar [role=tablist] { color:var(--vt-text)!important; background:var(--vt-surface)!important; }
 html[data-vt-theme="light"] .vt-sidebar [role=tab][aria-selected=true] { background:var(--vt-raised)!important; }
@@ -48,8 +49,6 @@ html[data-vt-theme] .chakra-drawer__content .chakra-switch__thumb[data-state=che
 html[data-vt-theme] .vt-sidebar > .vt-sidebar-content { background:var(--vt-surface)!important; width:calc(100% - 24px); }
 html[data-vt-theme] .vt-sidebar { background:var(--vt-surface)!important; }
 /* Shared interaction surfaces: restrained contrast, one accent, consistent geometry. */
-:root[data-vt-theme="light"] { --vt-surface:#fafbfc; --vt-raised:#f0f2f5; --vt-text:#242934; --vt-muted:#727b8a; --vt-border:#dfe3e9; --vt-hover:#e9edf3; --vt-shadow:0 12px 32px #18243b18,0 2px 6px #18243b0a; }
-:root[data-vt-theme="dark"] { --vt-surface:#1b1d22; --vt-raised:#25282f; --vt-text:#e8ebf1; --vt-muted:#959dab; --vt-border:#353a44; --vt-hover:#303540; --vt-shadow:0 12px 32px #0005; }
 html[data-vt-theme] .chakra-select__content,
 html[data-vt-theme] .chakra-menu__content,
 html[data-vt-theme] .chakra-popover__content { border:1px solid var(--vt-border)!important; box-shadow:var(--vt-shadow)!important; padding:6px!important; border-radius:10px!important; }
@@ -78,4 +77,6 @@ html[data-vt-theme] .chakra-drawer__content .chakra-switch__control { background
 html[data-vt-theme] .chakra-drawer__content .chakra-switch__control[data-state=checked] { background:var(--vt-accent)!important; }
 html[data-vt-theme] .chakra-drawer__content .chakra-switch__thumb { box-shadow:0 1px 3px #0002!important; }
 html[data-vt-theme] .chakra-tooltip__content { background:var(--vt-text)!important; color:var(--vt-surface)!important; border-radius:6px!important; box-shadow:var(--vt-shadow)!important; }
-html[data-vt-theme] button:disabled { opacity:.45; }
+html[data-vt-theme] .chakra-drawer__content button:disabled { background:var(--vt-disabled-surface)!important; color:var(--vt-disabled-text)!important; border-color:var(--vt-disabled-border)!important; opacity:1!important; }
+html[data-vt-theme] .chakra-drawer__content button:disabled svg { color:inherit!important; }
+html[data-vt-theme] button:disabled { opacity:.55; }
