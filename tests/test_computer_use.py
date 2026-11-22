@@ -13,6 +13,7 @@ from src.open_llm_vtuber.computer_use.access import LOCAL_CONTROL, PASSIVE_TURN
 from src.open_llm_vtuber.computer_use.browser import Browser
 from src.open_llm_vtuber.mcpp.tool_executor import ToolExecutor
 from src.open_llm_vtuber.mcpp.tool_manager import ToolManager
+from src.open_llm_vtuber.conversations.conversation_handler import _run_with_local_control
 
 
 @pytest.fixture
@@ -44,6 +45,18 @@ def test_disabled_remote_passive_and_live_cannot_execute(control, monkeypatch):
             control.browser.execute.assert_not_called()
         finally:
             LOCAL_CONTROL.reset(token)
+    asyncio.run(run())
+
+
+def test_local_control_is_preserved_for_queued_conversation_task():
+    async def read_local_control():
+        return LOCAL_CONTROL.get()
+
+    async def run():
+        assert LOCAL_CONTROL.get() is False
+        assert await _run_with_local_control(read_local_control(), True) is True
+        assert LOCAL_CONTROL.get() is False
+
     asyncio.run(run())
 
 

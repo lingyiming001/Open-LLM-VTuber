@@ -13,6 +13,7 @@ from uuid import uuid4
 from langgraph.graph import END, START, StateGraph
 
 from .stage_stream import StageStream
+from .browser_control import browser_navigation_url
 from ..mcpp.json_detector import StreamJSONDetector
 from ..mcpp.types import ToolCallObject, ToolCallFunctionObject
 
@@ -39,12 +40,75 @@ class ConversationGraph:
         self.prompt = prompt
         self.max_tool_rounds = max_tool_rounds
         graph = StateGraph(TurnState)
+        graph.add_node("preflight", self._preflight)
         graph.add_node("model", self._model)
         graph.add_node("tools", self._tools)
-        graph.add_edge(START, "model")
+        graph.add_edge(START, "preflight")
+        graph.add_conditional_edges("preflight", self._preflight_route)
         graph.add_conditional_edges("model", self._route)
         graph.add_edge("tools", "model")
         self.graph = graph.compile()
+
+    @staticmethod
+    def _message_text(content: Any) -> str:
+        if isinstance(content, str):
+            return content
+        if isinstance(content, list):
+            text_parts = [
+                str(part.get("text", ""))
+                for part in content
+                if isinstance(part, dict) and part.get("type") == "text"
+            ]
+            return text_parts[-1] if text_parts else ""
+        return ""
+
+    def _preflight_route(self, state: TurnState):
+        return "tools" if state["calls"] else "model"
+
+    def _preflight(self, state: TurnState):
+        browser_enabled = any(
+            tool.get("function", {}).get("name") == "local_browser"
+            for tool in self.tools
+        )
+        if not browser_enabled:
+            return {"calls": []}
+        user_message = next(
+            (message for message in reversed(state["messages"]) if message.get("role") == "user"),
+            None,
+        )
+        url = browser_navigation_url(
+            self._message_text(user_message.get("content")) if user_message else ""
+        )
+        if not url:
+            return {"calls": []}
+        call = ToolCallObject(
+            id=f"call_{uuid4().hex}",
+            function=ToolCallFunctionObject(
+                name="local_browser",
+                arguments=json.dumps({"action": "navigate", "url": url}),
+            ),
+        )
+        messages = list(state["messages"])
+        messages.append(
+            {
+                "role": "assistant",
+                "content": None,
+                "tool_calls": [
+                    {
+                        "id": call.id,
+                        "type": "function",
+                        "function": {
+                            "name": call.function.name,
+                            "arguments": call.function.arguments,
+                        },
+                    }
+                ],
+            }
+        )
+        return {
+            "messages": messages,
+            "calls": [call],
+        }
 
     def _route(self, state):
         if state.get("retry"):

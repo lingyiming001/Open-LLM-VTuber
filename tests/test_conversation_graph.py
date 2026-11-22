@@ -41,7 +41,7 @@ class Executor:
 
 
 class GraphTests(unittest.IsolatedAsyncioTestCase):
-    async def collect(self, model, tools=None, executor=None, limit=8):
+    async def collect(self, model, tools=None, executor=None, limit=8, message="hi"):
         memory = []
         graph = ConversationGraph(
             model,
@@ -52,7 +52,7 @@ class GraphTests(unittest.IsolatedAsyncioTestCase):
             max_tool_rounds=limit,
         )
         events = [
-            event async for event in graph.stream([{"role": "user", "content": "hi"}])
+            event async for event in graph.stream([{"role": "user", "content": message}])
         ]
         return events, memory
 
@@ -71,6 +71,36 @@ class GraphTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(events[0]["type"], "tool_status")
         self.assertEqual(model.requests[1][0][-1]["role"], "tool")
         self.assertEqual(model.requests[1][0][-2]["tool_calls"][0]["id"], "call_1")
+
+    async def test_baidu_navigation_runs_before_the_model(self):
+        model = Model([["Opened."]])
+        events, _ = await self.collect(
+            model,
+            [{"type": "function", "function": {"name": "local_browser"}}],
+            Executor(),
+            message="打开百度",
+        )
+        self.assertEqual(events[0]["type"], "tool_status")
+        request_messages = model.requests[0][0]
+        self.assertEqual(request_messages[-2]["role"], "assistant")
+        self.assertEqual(
+            request_messages[-2]["tool_calls"][0]["function"]["name"],
+            "local_browser",
+        )
+        self.assertEqual(request_messages[-1]["role"], "tool")
+
+    async def test_baidu_navigation_uses_user_text_after_control_context(self):
+        model = Model([["Opened."]])
+        events, _ = await self.collect(
+            model,
+            [{"type": "function", "function": {"name": "local_browser"}}],
+            Executor(),
+            message=[
+                {"type": "text", "text": "电脑与浏览器工具状态：已启用"},
+                {"type": "text", "text": "打开百度"},
+            ],
+        )
+        self.assertEqual(events[0]["type"], "tool_status")
 
     async def test_native_tool_fallback(self):
         model = Model([["__API_NOT_SUPPORT_TOOLS__"], ["Fallback."]])

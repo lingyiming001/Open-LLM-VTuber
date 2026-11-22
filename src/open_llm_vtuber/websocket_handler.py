@@ -514,6 +514,8 @@ class WebSocketHandler:
         self, websocket: WebSocket, client_uid: str, data: WSMessage
     ) -> None:
         """Handle triggers that start a conversation"""
+        from .computer_use.access import LOCAL_CONTROL
+
         await handle_conversation_trigger(
             msg_type=data.get("type", ""),
             data=data,
@@ -526,6 +528,7 @@ class WebSocketHandler:
             received_data_buffers=self.received_data_buffers,
             current_conversation_tasks=self.current_conversation_tasks,
             broadcast_to_group=self.broadcast_to_group,
+            local_control=LOCAL_CONTROL.get(),
         )
 
     async def _handle_fetch_configs(

@@ -1,8 +1,14 @@
+# Configuration generation must run before server imports or model SDK loading.
+if __name__ == "__main__":
+    from src.open_llm_vtuber.config_bootstrap import prepare_config
+
+    if prepare_config():
+        raise SystemExit(0)
+
 import os
 import sys
 import atexit
 import asyncio
-import argparse
 import subprocess
 from pathlib import Path
 import tomli
@@ -108,12 +114,9 @@ def check_frontend_submodule(lang=None):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Open-LLM-VTuber Server")
-    parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
-    parser.add_argument(
-        "--hf_mirror", action="store_true", help="Use Hugging Face mirror"
-    )
-    return parser.parse_args()
+    from src.open_llm_vtuber.config_bootstrap import argument_parser
+
+    return argument_parser().parse_args()
 
 
 @logger.catch

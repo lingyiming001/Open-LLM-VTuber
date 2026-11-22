@@ -338,7 +338,7 @@ class ServiceContext:
             logger.info(f"Initializing ASR: {asr_config.asr_model}")
             self.asr_engine = ASRFactory.get_asr_system(
                 asr_config.asr_model,
-                **getattr(asr_config, asr_config.asr_model).model_dump(),
+                **asr_config.engine_options(),
             )
             # saving config should be done after successful initialization
             self.character_config.asr_config = asr_config

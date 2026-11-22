@@ -22,3 +22,11 @@ tts_config:
 ```
 
 参数块可省略。自定义参数按关键字传给构造函数。已有内置引擎继续使用原有配置。
+
+
+## 首次配置
+
+缺少 `conf.yaml` 时启动程序只生成配置并退出，编辑后再次启动。
+也可使用 `uv run run_server.py --init-config --config-language zh`。
+生成已有文件时不会覆盖。`tts_model` 指定引擎，具体选项放入同名参数块。
+内置引擎由 `TTS_ENGINES` 注册表按需加载；缺少依赖时会报告引擎名和依赖名。

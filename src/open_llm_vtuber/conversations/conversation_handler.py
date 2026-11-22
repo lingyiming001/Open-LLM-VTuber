@@ -1,7 +1,7 @@
 import asyncio
 import json
 import time
-from typing import Dict, Optional, Callable
+from typing import Awaitable, Callable, Dict, Optional
 
 import numpy as np
 from fastapi import WebSocket
@@ -18,6 +18,17 @@ from .types import GroupConversationState
 from prompts import prompt_loader
 
 
+async def _run_with_local_control(coro: Awaitable, local_control: bool):
+    """Keep the trusted WebSocket origin available inside queued turn tasks."""
+    from ..computer_use.access import LOCAL_CONTROL
+
+    token = LOCAL_CONTROL.set(local_control)
+    try:
+        return await coro
+    finally:
+        LOCAL_CONTROL.reset(token)
+
+
 async def handle_conversation_trigger(
     msg_type: str,
     data: dict,
@@ -30,6 +41,7 @@ async def handle_conversation_trigger(
     received_data_buffers: Dict[str, np.ndarray],
     current_conversation_tasks: Dict[str, Optional[asyncio.Task]],
     broadcast_to_group: Callable,
+    local_control: bool = False,
 ) -> None:
     """Handle triggers that start a conversation"""
     metadata = None
@@ -100,7 +112,7 @@ async def handle_conversation_trigger(
             logger.info(f"Starting new group conversation for {task_key}")
 
             current_conversation_tasks[task_key] = asyncio.create_task(
-                process_group_conversation(
+                _run_with_local_control(process_group_conversation(
                     client_contexts=client_contexts,
                     client_connections=client_connections,
                     broadcast_func=broadcast_to_group,
@@ -110,12 +122,12 @@ async def handle_conversation_trigger(
                     images=images,
                     session_emoji=session_emoji,
                     metadata=metadata,
-                )
+                ), local_control)
             )
     else:
         # Use client_uid as task key for individual conversations
         current_conversation_tasks[client_uid] = asyncio.create_task(
-            process_single_conversation(
+            _run_with_local_control(process_single_conversation(
                 context=context,
                 websocket_send=websocket.send_text,
                 client_uid=client_uid,
@@ -123,7 +135,7 @@ async def handle_conversation_trigger(
                 images=images,
                 session_emoji=session_emoji,
                 metadata=metadata,
-            )
+            ), local_control)
         )
 
 

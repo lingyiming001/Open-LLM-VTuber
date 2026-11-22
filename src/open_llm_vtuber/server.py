@@ -189,6 +189,10 @@ class WebSocketServer:
             html = (frontend_root / "index.html").read_text(encoding="utf-8")
             # Bundled filenames stay unchanged for local patches; invalidate browser caches.
             def version_asset(match):
+                # Vite chunks import the hashed entry by its exact URL. Adding a
+                # query only here executes the entry twice and splits React contexts.
+                if frontend_root == Path("frontend/dist/web"):
+                    return match.group(0)
                 asset = frontend_root / match.group(2)
                 version = asset.stat().st_mtime_ns if asset.is_file() else 0
                 return f'{match.group(1)}"./{match.group(2)}?v={version}"'

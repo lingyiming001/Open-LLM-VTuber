@@ -1,5 +1,5 @@
 # config_manager/asr.py
-from pydantic import ValidationInfo, Field, model_validator
+from pydantic import Field, model_validator
 from typing import Literal, Optional, Dict, ClassVar
 from .i18n import I18nMixin, Description
 
@@ -260,8 +260,9 @@ class SherpaOnnxASRConfig(I18nMixin):
     }
 
     @model_validator(mode="after")
-    def check_model_paths(cls, values: "SherpaOnnxASRConfig", info: ValidationInfo):
-        model_type = values.model_type
+    def check_model_paths(self):
+        values = self
+        model_type = self.model_type
 
         if model_type == "transducer":
             if not all([values.encoder, values.decoder, values.joiner, values.tokens]):
@@ -299,7 +300,13 @@ class SherpaOnnxASRConfig(I18nMixin):
                     "sense_voice and tokens must be provided for sense_voice model type"
                 )
         elif model_type == "fire_red_asr":
-            if not all([values.fire_red_asr_encoder, values.fire_red_asr_decoder, values.tokens]):
+            if not all(
+                [
+                    values.fire_red_asr_encoder,
+                    values.fire_red_asr_decoder,
+                    values.tokens,
+                ]
+            ):
                 raise ValueError(
                     "fire_red_asr_encoder, fire_red_asr_decoder, and tokens must be provided for fire_red_asr model type"
                 )
@@ -353,23 +360,14 @@ class ASRConfig(I18nMixin):
     }
 
     @model_validator(mode="after")
-    def check_asr_config(cls, values: "ASRConfig", info: ValidationInfo):
-        asr_model = values.asr_model
+    def check_asr_config(self):
+        self.engine_options()
+        return self
 
-        # Only validate the selected ASR model
-        if asr_model == "AzureASR" and values.azure_asr is not None:
-            values.azure_asr.model_validate(values.azure_asr.model_dump())
-        elif asr_model == "Faster-Whisper" and values.faster_whisper is not None:
-            values.faster_whisper.model_validate(values.faster_whisper.model_dump())
-        elif asr_model == "WhisperCPP" and values.whisper_cpp is not None:
-            values.whisper_cpp.model_validate(values.whisper_cpp.model_dump())
-        elif asr_model == "Whisper" and values.whisper is not None:
-            values.whisper.model_validate(values.whisper.model_dump())
-        elif asr_model == "FunASR" and values.fun_asr is not None:
-            values.fun_asr.model_validate(values.fun_asr.model_dump())
-        elif asr_model == "GroqWhisperASR" and values.groq_whisper_asr is not None:
-            values.groq_whisper_asr.model_validate(values.groq_whisper_asr.model_dump())
-        elif asr_model == "SherpaOnnxASR" and values.sherpa_onnx_asr is not None:
-            values.sherpa_onnx_asr.model_validate(values.sherpa_onnx_asr.model_dump())
-
-        return values
+    def engine_options(self) -> dict:
+        options = getattr(self, self.asr_model, None)
+        if options is None:
+            raise ValueError(
+                f"Selected ASR engine '{self.asr_model}' requires an '{self.asr_model}' configuration block"
+            )
+        return options.model_dump()

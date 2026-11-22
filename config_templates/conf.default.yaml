@@ -1,3 +1,9 @@
+# First startup creates conf.yaml and exits. Edit it before starting again.
+# Generate explicitly: uv run run_server.py --init-config --config-language en
+# Select character_config.asr_config.asr_model and tts_config.tts_model,
+# then edit each matching engine block: local model paths or cloud credentials.
+# Existing configuration is never overwritten by generation.
+
 # System Settings: Setting related to the initialization of the server
 system_config:
   default_language: 'en' # zh or en
